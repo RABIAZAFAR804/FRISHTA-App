@@ -1,0 +1,6 @@
+{
+  "name": "FARISHTA App",
+  "description": "Smart bike crash auto-detection, autonomous Rescue 1122 CAD dispatch, and community first-responder golden-hour lifelines.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
