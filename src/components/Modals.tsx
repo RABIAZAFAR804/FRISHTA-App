@@ -1,23 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Responder } from '../types';
+import { Responder, EmergencyService } from '../types';
 import { soundEffects } from '../utils/audio';
 
-// 1. Quick Call Modal
+type CallOrRouteTarget = (Responder | EmergencyService) & {
+  role?: string;
+  affiliation?: string;
+  badge?: string;
+  avatarUrl?: string;
+  icon?: string;
+  color?: string;
+};
+
+// 1. Quick Call Modal (Supports Farishta Responders, Edhi, Chhipa, 1122, Hospitals, Bykea, Yango)
 interface CallModalProps {
-  responder: Responder | null;
+  target: CallOrRouteTarget | null;
   onClose: () => void;
 }
 
-export const CallModal: React.FC<CallModalProps> = ({ responder, onClose }) => {
+export const CallModal: React.FC<CallModalProps> = ({ target, onClose }) => {
   const [callDuration, setCallDuration] = useState(0);
   const [status, setStatus] = useState<'Connecting...' | 'Encrypted Call Active'>('Connecting...');
 
   useEffect(() => {
-    if (!responder) return;
+    if (!target) return;
     const timeout = setTimeout(() => {
       setStatus('Encrypted Call Active');
       soundEffects.playHapticClick();
-    }, 1200);
+    }, 1000);
 
     const interval = setInterval(() => {
       setCallDuration((prev) => prev + 1);
@@ -27,9 +36,9 @@ export const CallModal: React.FC<CallModalProps> = ({ responder, onClose }) => {
       clearTimeout(timeout);
       clearInterval(interval);
     };
-  }, [responder]);
+  }, [target]);
 
-  if (!responder) return null;
+  if (!target) return null;
 
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -37,33 +46,65 @@ export const CallModal: React.FC<CallModalProps> = ({ responder, onClose }) => {
     return `${mins < 10 ? '0' : ''}${mins}:${rem < 10 ? '0' : ''}${rem}`;
   };
 
+  const displayName = target.name;
+  const subtitle = target.role || target.badge || 'Emergency Rapid Response';
+  const displayPhone = target.phone;
+  const accentColor = target.color || '#00f1fd';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
       <div className="w-full max-w-sm rounded-3xl bg-[#1c1f2a] border border-[#313540] p-6 shadow-2xl flex flex-col items-center text-center relative overflow-hidden">
         {/* Glow backdrop */}
-        <div className="absolute -top-12 -right-12 w-40 h-40 bg-[#00f1fd]/15 rounded-full blur-3xl pointer-events-none" />
+        <div
+          className="absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl pointer-events-none"
+          style={{ backgroundColor: `${accentColor}20` }}
+        />
 
-        {/* Responder avatar */}
+        {/* Target avatar / icon */}
         <div className="relative my-4">
-          <span className="absolute -inset-2 rounded-full bg-[#00f1fd]/20 animate-ping" />
-          <img
-            src={responder.avatarUrl}
-            alt={responder.name}
-            className="w-24 h-24 rounded-full object-cover ring-4 ring-[#00f1fd] shadow-xl relative z-10"
-            onError={(e) => {
-              (e.currentTarget as HTMLElement).style.display = 'none';
-            }}
+          <span
+            className="absolute -inset-2 rounded-full animate-ping opacity-40"
+            style={{ backgroundColor: accentColor }}
           />
+          {target.avatarUrl ? (
+            <img
+              src={target.avatarUrl}
+              alt={displayName}
+              className="w-24 h-24 rounded-full object-cover shadow-xl relative z-10"
+              style={{ border: `3px solid ${accentColor}` }}
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <div
+              className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-xl relative z-10"
+              style={{
+                backgroundColor: `${accentColor}25`,
+                border: `3px solid ${accentColor}`,
+                color: accentColor,
+              }}
+            >
+              <span className="material-symbols-outlined text-[42px]">
+                {target.icon || 'emergency'}
+              </span>
+            </div>
+          )}
         </div>
 
-        <h3 className="font-display text-xl font-bold text-white mt-1">{responder.name}</h3>
-        <p className="text-xs text-[#00f1fd] font-semibold tracking-wide uppercase mt-0.5">
-          {responder.role} • {responder.badge}
+        <h3 className="font-display text-lg font-bold text-white mt-1 truncate max-w-xs">
+          {displayName}
+        </h3>
+        <p
+          className="text-xs font-semibold tracking-wide uppercase mt-0.5 truncate max-w-xs"
+          style={{ color: accentColor }}
+        >
+          {subtitle}
         </p>
-        <span className="text-sm font-mono-num text-[#dfe2f1]/80 mt-2">{responder.phone}</span>
+        <span className="text-sm font-mono-num text-[#dfe2f1]/80 mt-2">{displayPhone}</span>
 
         {/* Call state badge */}
-        <div className="my-5 px-4 py-1.5 rounded-full bg-[#171b26] border border-[#313540] flex items-center gap-2">
+        <div className="my-4 px-4 py-1.5 rounded-full bg-[#171b26] border border-[#313540] flex items-center gap-2">
           <span
             className={`w-2 h-2 rounded-full ${
               status === 'Connecting...' ? 'bg-[#ffb3b5] animate-ping' : 'bg-[#4edea3]'
@@ -82,8 +123,9 @@ export const CallModal: React.FC<CallModalProps> = ({ responder, onClose }) => {
           {[40, 70, 30, 90, 60, 80, 45, 95, 50, 80, 35].map((h, i) => (
             <span
               key={i}
-              className="w-1 bg-[#00f1fd] rounded-full animate-pulse"
+              className="w-1 rounded-full animate-pulse"
               style={{
+                backgroundColor: accentColor,
                 height: `${h}%`,
                 animationDelay: `${i * 0.1}s`,
                 animationDuration: '0.8s',
@@ -93,7 +135,7 @@ export const CallModal: React.FC<CallModalProps> = ({ responder, onClose }) => {
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-6 mt-6">
+        <div className="flex items-center gap-6 mt-4">
           <button
             type="button"
             className="w-12 h-12 rounded-full bg-[#262a35] text-white flex items-center justify-center hover:bg-[#313540] transition-colors"
@@ -124,21 +166,28 @@ export const CallModal: React.FC<CallModalProps> = ({ responder, onClose }) => {
   );
 };
 
-// 2. Route Navigation Simulation Modal
+// 2. Route Navigation Simulation Modal (Supports Responders & Emergency Services)
 interface RouteModalProps {
-  responder: Responder | null;
+  target: CallOrRouteTarget | null;
   onClose: () => void;
 }
 
-export const RouteModal: React.FC<RouteModalProps> = ({ responder, onClose }) => {
-  if (!responder) return null;
+export const RouteModal: React.FC<RouteModalProps> = ({ target, onClose }) => {
+  if (!target) return null;
+
+  const accentColor = target.color || '#00f1fd';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
       <div className="w-full max-w-sm rounded-3xl bg-[#1c1f2a] border border-[#313540] p-5 shadow-2xl flex flex-col relative overflow-hidden">
         <div className="flex items-center justify-between border-b border-[#262a35] pb-3 mb-3">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#00f1fd] text-[22px]">navigation</span>
+            <span
+              className="material-symbols-outlined text-[22px]"
+              style={{ color: accentColor }}
+            >
+              navigation
+            </span>
             <span className="font-display font-bold text-white text-base">Tactical Fast Route</span>
           </div>
           <button
@@ -166,15 +215,15 @@ export const RouteModal: React.FC<RouteModalProps> = ({ responder, onClose }) =>
             <path
               d="M 60 90 L 120 90 L 120 50 L 220 50 L 220 120 L 240 120"
               fill="none"
-              stroke="#00f1fd"
+              stroke={accentColor}
               strokeWidth="4"
               strokeDasharray="6 4"
               className="animate-pulse"
             />
 
-            {/* Responder origin */}
-            <circle cx="60" cy="90" r="7" fill="#4edea3" />
-            <circle cx="60" cy="90" r="14" fill="#4edea3" fillOpacity="0.25" />
+            {/* Entity Origin Node */}
+            <circle cx="60" cy="90" r="7" fill={accentColor} />
+            <circle cx="60" cy="90" r="14" fill={accentColor} fillOpacity="0.25" />
 
             {/* Destination Crash Pin */}
             <circle cx="240" cy="120" r="8" fill="#ff334b" />
@@ -194,32 +243,46 @@ export const RouteModal: React.FC<RouteModalProps> = ({ responder, onClose }) =>
 
         {/* Turn-by-turn instruction */}
         <div className="mt-3 p-3 rounded-xl bg-[#171b26] border border-[#262a35] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-[#00f1fd]/15 text-[#00f1fd] flex items-center justify-center">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              style={{ backgroundColor: `${accentColor}25`, color: accentColor }}
+            >
               <span className="material-symbols-outlined text-[20px]">turn_sharp_right</span>
             </div>
-            <div>
-              <span className="text-xs text-white font-bold block">Turn Right on Main Blvd</span>
-              <span className="text-[11px] text-[#dfe2f1]/60">Shortest golden-hour path • Clear traffic</span>
+            <div className="min-w-0">
+              <span className="text-xs text-white font-bold block truncate">{target.name}</span>
+              <span className="text-[11px] text-[#dfe2f1]/60 truncate block">
+                Shortest golden-hour path • Clear emergency lane
+              </span>
             </div>
           </div>
-          <div className="text-right">
-            <span className="text-xs font-bold text-[#00f1fd] font-mono-num">{responder.distance}</span>
-            <span className="text-[10px] text-[#dfe2f1]/60 block">{responder.eta} ETA</span>
+          <div className="text-right shrink-0 pl-2">
+            <span
+              className="text-xs font-bold font-mono-num block"
+              style={{ color: accentColor }}
+            >
+              {target.distance}
+            </span>
+            <span className="text-[10px] text-[#dfe2f1]/60 block">{target.eta} ETA</span>
           </div>
         </div>
 
         {/* Dispatcher Notice */}
         <p className="text-[11px] text-[#dfe2f1]/70 text-center mt-3">
-          Rescue 1122 Dispatcher &amp; {responder.name} share live synchronized telemetry vector coordinates.
+          Rescue 1122 CAD &amp; {target.name} share live telemetry coordinates and traffic clearance.
         </p>
 
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 w-full py-3 rounded-xl bg-[#00f1fd] text-[#00373a] font-display font-bold text-sm shadow-[0_0_20px_rgba(0,241,253,0.35)] active:scale-98 transition-transform"
+          className="mt-4 w-full py-3 rounded-xl text-white font-display font-bold text-sm active:scale-98 transition-transform shadow-lg"
+          style={{
+            backgroundColor: accentColor === '#ffffff' ? '#00f1fd' : accentColor,
+            color: accentColor === '#00f1fd' || accentColor === '#4edea3' || accentColor === '#ffb3b5' ? '#00373a' : '#ffffff',
+          }}
         >
-          Confirm Tracking Window
+          Confirm Route Tracking
         </button>
       </div>
     </div>
@@ -259,7 +322,7 @@ export const WitnessModal: React.FC<WitnessModalProps> = ({ isOpen, onClose, onS
         </div>
 
         <p className="text-xs text-[#dfe2f1]/70 mb-3">
-          You are reporting an accident as a bystander/witness. Your current GPS will be transmitted to Rescue 1122 and nearest Farishta community doctors.
+          You are reporting an accident as a bystander/witness. Your current GPS will be transmitted to Rescue 1122, Edhi (115), Chhipa (1020), and nearest Farishta community doctors.
         </p>
 
         {/* Form fields */}
@@ -347,7 +410,7 @@ export const WitnessModal: React.FC<WitnessModalProps> = ({ isOpen, onClose, onS
           className="mt-4 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#ff334b] to-[#be0035] text-white font-display font-extrabold text-sm uppercase tracking-wider shadow-[0_0_24px_rgba(255,51,75,0.45)] active:scale-98 transition-transform flex items-center justify-center gap-2"
         >
           <span className="material-symbols-outlined text-[20px]">e911_emergency</span>
-          <span>Broadcast Witness CAD Alert</span>
+          <span>Broadcast Multi-Agency CAD Alert</span>
         </button>
       </div>
     </div>

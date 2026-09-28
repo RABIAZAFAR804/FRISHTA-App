@@ -31,6 +31,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       icon: 'radar',
     },
     {
+      id: 'services' as TabType,
+      label: 'Hub',
+      icon: 'medical_information',
+    },
+    {
       id: 'medical' as TabType,
       label: 'Medical',
       icon: 'medical_services',

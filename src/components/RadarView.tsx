@@ -1,15 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { Responder } from '../types';
+import { Responder, EmergencyService } from '../types';
+import { EMERGENCY_SERVICES } from '../data/emergencyServices';
 import { soundEffects } from '../utils/audio';
 
 interface RadarViewProps {
   onOpenCall: (responder: Responder) => void;
   onOpenRoute: (responder: Responder) => void;
+  onOpenServiceCall?: (service: EmergencyService) => void;
+  onOpenServiceRoute?: (service: EmergencyService) => void;
 }
 
-export const RadarView: React.FC<RadarViewProps> = ({ onOpenCall, onOpenRoute }) => {
+export const RadarView: React.FC<RadarViewProps> = ({
+  onOpenCall,
+  onOpenRoute,
+  onOpenServiceCall,
+  onOpenServiceRoute,
+}) => {
   const [activeRange, setActiveRange] = useState<'500m' | '1.0 km' | '2.0 km'>('2.0 km');
+  const [radarFilter, setRadarFilter] = useState<'all' | 'responders' | 'ambulances' | 'hospitals'>('all');
   const [dispatcherEtaSeconds, setDispatcherEtaSeconds] = useState(300); // 5 mins
+  const [selectedMapEntity, setSelectedMapEntity] = useState<{
+    name: string;
+    type: string;
+    distance: string;
+    eta: string;
+    phone: string;
+    icon: string;
+    color: string;
+    onCall: () => void;
+    onRoute: () => void;
+  } | null>(null);
 
   // Responder Mock Data from specs & uploaded images
   const initialResponders: Responder[] = [
@@ -83,6 +103,8 @@ export const RadarView: React.FC<RadarViewProps> = ({ onOpenCall, onOpenRoute })
     return true; // 2.0 km
   });
 
+  const topNearbyServices = EMERGENCY_SERVICES.slice(0, 4);
+
   return (
     <div className="flex flex-col w-full pb-28 pt-2 px-4 max-w-xl mx-auto space-y-4 animate-in fade-in duration-300">
       {/* Telemetry Active Header Strip */}
@@ -96,7 +118,7 @@ export const RadarView: React.FC<RadarViewProps> = ({ onOpenCall, onOpenRoute })
               Telemetry Active
             </span>
             <span className="font-display text-sm font-bold text-white truncate">
-              {filteredResponders.length} Matched within {activeRange}
+              {filteredResponders.length} Farishtas + 6 Fleets within {activeRange}
             </span>
           </div>
         </div>
@@ -154,9 +176,35 @@ export const RadarView: React.FC<RadarViewProps> = ({ onOpenCall, onOpenRoute })
           </div>
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#171b26] border border-[#4edea3]/40 text-[#4edea3]">
             <span className="material-symbols-outlined text-[14px]">cell_tower</span>
-            <span>Community Responders Pinged 🟢</span>
+            <span>Edhi 115 &amp; Chhipa 1020 Alerted 🟢</span>
           </div>
         </div>
+      </div>
+
+      {/* Radar Map Layer Filters */}
+      <div className="flex items-center justify-between gap-1.5 overflow-x-auto pb-0.5">
+        {[
+          { id: 'all' as const, label: 'All Radar Pings' },
+          { id: 'responders' as const, label: 'Farishtas' },
+          { id: 'ambulances' as const, label: '1122 / Edhi / Chhipa' },
+          { id: 'hospitals' as const, label: 'ER Hospitals' },
+        ].map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => {
+              soundEffects.playHapticClick();
+              setRadarFilter(f.id);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+              radarFilter === f.id
+                ? 'bg-[#00f1fd] text-[#00373a]'
+                : 'bg-[#1c1f2a] border border-[#262a35] text-[#dfe2f1]/70 hover:text-white'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {/* Stylized Dark Radar Map Layout */}
@@ -233,63 +281,198 @@ export const RadarView: React.FC<RadarViewProps> = ({ onOpenCall, onOpenRoute })
           </span>
         </div>
 
-        {/* Interactive Responder Node 1: Dr. Ayesha */}
-        <button
-          type="button"
-          onClick={() => {
-            soundEffects.playHapticClick();
-            onOpenCall(initialResponders[0]);
-          }}
-          className="absolute z-20 top-[34%] left-[62%] group -translate-x-1/2 -translate-y-1/2 cursor-pointer flex flex-col items-center hover:scale-110 transition-transform"
-        >
-          <div className="relative flex items-center justify-center">
-            <span className="animate-ping absolute h-7 w-7 rounded-full bg-[#4edea3] opacity-50" />
-            <div className="w-8 h-8 rounded-full bg-[#1c1f2a] ring-2 ring-[#4edea3] shadow-[0_0_16px_rgba(78,222,163,0.7)] flex items-center justify-center text-[#4edea3]">
-              <span className="material-symbols-outlined text-[18px]">stethoscope</span>
+        {/* Responder Node 1: Dr. Ayesha */}
+        {(radarFilter === 'all' || radarFilter === 'responders') && (
+          <button
+            type="button"
+            onClick={() => {
+              soundEffects.playHapticClick();
+              setSelectedMapEntity({
+                name: 'Dr. Ayesha Malik',
+                type: 'Certified ER Doctor • Farishta',
+                distance: '350m away',
+                eta: '1.8 min',
+                phone: '+92 301 9876543',
+                icon: 'stethoscope',
+                color: '#4edea3',
+                onCall: () => onOpenCall(initialResponders[0]),
+                onRoute: () => onOpenRoute(initialResponders[0]),
+              });
+            }}
+            className="absolute z-20 top-[34%] left-[62%] group -translate-x-1/2 -translate-y-1/2 cursor-pointer flex flex-col items-center hover:scale-110 transition-transform"
+          >
+            <div className="relative flex items-center justify-center">
+              <span className="animate-ping absolute h-7 w-7 rounded-full bg-[#4edea3] opacity-50" />
+              <div className="w-8 h-8 rounded-full bg-[#1c1f2a] ring-2 ring-[#4edea3] shadow-[0_0_16px_rgba(78,222,163,0.7)] flex items-center justify-center text-[#4edea3]">
+                <span className="material-symbols-outlined text-[18px]">stethoscope</span>
+              </div>
             </div>
-          </div>
-          <span className="mt-1 px-2 py-0.5 rounded-md bg-[#0a0e18]/90 border border-[#4edea3]/40 text-[#4edea3] text-[10px] font-bold whitespace-nowrap shadow-md">
-            Dr. Ayesha (350m)
-          </span>
-        </button>
+            <span className="mt-1 px-2 py-0.5 rounded-md bg-[#0a0e18]/90 border border-[#4edea3]/40 text-[#4edea3] text-[10px] font-bold whitespace-nowrap shadow-md">
+              Dr. Ayesha (350m)
+            </span>
+          </button>
+        )}
 
-        {/* Interactive Responder Node 2: Zeeshan */}
-        <button
-          type="button"
-          onClick={() => {
-            soundEffects.playHapticClick();
-            onOpenCall(initialResponders[1]);
-          }}
-          className="absolute z-20 top-[65%] left-[28%] group -translate-x-1/2 -translate-y-1/2 cursor-pointer flex flex-col items-center hover:scale-110 transition-transform"
-        >
-          <div className="relative flex items-center justify-center">
-            <div className="w-7 h-7 rounded-full bg-[#1c1f2a] ring-2 ring-[#00f1fd] shadow-[0_0_14px_rgba(0,241,253,0.5)] flex items-center justify-center text-[#00f1fd]">
-              <span className="material-symbols-outlined text-[16px]">cardiology</span>
+        {/* Responder Node 2: Zeeshan */}
+        {(radarFilter === 'all' || radarFilter === 'responders') && (
+          <button
+            type="button"
+            onClick={() => {
+              soundEffects.playHapticClick();
+              setSelectedMapEntity({
+                name: 'Zeeshan Tariq',
+                type: 'CPR & AED First-Aid Volunteer',
+                distance: '620m away',
+                eta: '3.1 min',
+                phone: '+92 321 4567890',
+                icon: 'cardiology',
+                color: '#00f1fd',
+                onCall: () => onOpenCall(initialResponders[1]),
+                onRoute: () => onOpenRoute(initialResponders[1]),
+              });
+            }}
+            className="absolute z-20 top-[65%] left-[28%] group -translate-x-1/2 -translate-y-1/2 cursor-pointer flex flex-col items-center hover:scale-110 transition-transform"
+          >
+            <div className="relative flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-[#1c1f2a] ring-2 ring-[#00f1fd] shadow-[0_0_14px_rgba(0,241,253,0.5)] flex items-center justify-center text-[#00f1fd]">
+                <span className="material-symbols-outlined text-[16px]">cardiology</span>
+              </div>
             </div>
-          </div>
-          <span className="mt-1 px-1.5 py-0.5 rounded-md bg-[#0a0e18]/90 border border-[#00f1fd]/40 text-[#00f1fd] text-[10px] font-bold whitespace-nowrap">
-            Zeeshan (620m)
-          </span>
-        </button>
+            <span className="mt-1 px-1.5 py-0.5 rounded-md bg-[#0a0e18]/90 border border-[#00f1fd]/40 text-[#00f1fd] text-[10px] font-bold whitespace-nowrap">
+              Zeeshan (620m)
+            </span>
+          </button>
+        )}
 
-        {/* Interactive Responder Node 3: Hamza */}
-        <button
-          type="button"
-          onClick={() => {
-            soundEffects.playHapticClick();
-            onOpenCall(initialResponders[2]);
-          }}
-          className="absolute z-20 top-[20%] left-[25%] group -translate-x-1/2 -translate-y-1/2 cursor-pointer flex flex-col items-center hover:scale-110 transition-transform"
-        >
-          <div className="relative flex items-center justify-center">
-            <div className="w-6 h-6 rounded-full bg-[#1c1f2a] ring-2 ring-[#dfe2f1] shadow-[0_0_10px_rgba(220,253,255,0.4)] flex items-center justify-center text-[#dfe2f1]">
-              <span className="material-symbols-outlined text-[14px]">healing</span>
+        {/* Emergency Platform Node: Edhi 115 Ambulance */}
+        {(radarFilter === 'all' || radarFilter === 'ambulances') && (
+          <button
+            type="button"
+            onClick={() => {
+              soundEffects.playHapticClick();
+              const edhi = EMERGENCY_SERVICES.find((s) => s.id === 'edhi-foundation')!;
+              setSelectedMapEntity({
+                name: 'Edhi Ambulance Fleet',
+                type: 'Rapid Emergency Ambulance • 115',
+                distance: '1.4 km',
+                eta: '3.5 min',
+                phone: '115',
+                icon: 'emergency',
+                color: '#00f1fd',
+                onCall: () => onOpenServiceCall && onOpenServiceCall(edhi),
+                onRoute: () => onOpenServiceRoute && onOpenServiceRoute(edhi),
+              });
+            }}
+            className="absolute z-20 top-[26%] left-[76%] group -translate-x-1/2 -translate-y-1/2 cursor-pointer flex flex-col items-center hover:scale-110 transition-transform"
+          >
+            <div className="relative flex items-center justify-center">
+              <span className="animate-ping absolute h-7 w-7 rounded-full bg-[#00f1fd] opacity-40" />
+              <div className="w-7 h-7 rounded-full bg-[#17252f] ring-2 ring-[#00f1fd] shadow-[0_0_14px_rgba(0,241,253,0.5)] flex items-center justify-center text-[#00f1fd]">
+                <span className="material-symbols-outlined text-[16px]">emergency</span>
+              </div>
             </div>
-          </div>
-          <span className="mt-1 px-1.5 py-0.5 rounded-md bg-[#0a0e18]/90 border border-[#313540] text-[#dfe2f1] text-[9px] font-bold whitespace-nowrap">
-            Hamza (1.1km)
-          </span>
-        </button>
+            <span className="mt-1 px-1.5 py-0.5 rounded-md bg-[#0a0e18]/90 border border-[#00f1fd]/40 text-[#00f1fd] text-[9px] font-extrabold whitespace-nowrap">
+              Edhi 115 (1.4km)
+            </span>
+          </button>
+        )}
+
+        {/* Emergency Platform Node: Chhipa 1020 Ambulance */}
+        {(radarFilter === 'all' || radarFilter === 'ambulances') && (
+          <button
+            type="button"
+            onClick={() => {
+              soundEffects.playHapticClick();
+              const chhipa = EMERGENCY_SERVICES.find((s) => s.id === 'chhipa-welfare')!;
+              setSelectedMapEntity({
+                name: 'Chhipa Rescue Fleet',
+                type: 'Chhipa Rapid Ambulance • 1020',
+                distance: '1.9 km',
+                eta: '4.2 min',
+                phone: '1020',
+                icon: 'airport_shuttle',
+                color: '#ffb3b5',
+                onCall: () => onOpenServiceCall && onOpenServiceCall(chhipa),
+                onRoute: () => onOpenServiceRoute && onOpenServiceRoute(chhipa),
+              });
+            }}
+            className="absolute z-20 top-[72%] left-[34%] group -translate-x-1/2 -translate-y-1/2 cursor-pointer flex flex-col items-center hover:scale-110 transition-transform"
+          >
+            <div className="relative flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-[#201c2b] ring-2 ring-[#ffb3b5] shadow-[0_0_12px_rgba(255,179,181,0.5)] flex items-center justify-center text-[#ffb3b5]">
+                <span className="material-symbols-outlined text-[15px]">airport_shuttle</span>
+              </div>
+            </div>
+            <span className="mt-1 px-1.5 py-0.5 rounded-md bg-[#0a0e18]/90 border border-[#ffb3b5]/40 text-[#ffb3b5] text-[9px] font-extrabold whitespace-nowrap">
+              Chhipa (1.9km)
+            </span>
+          </button>
+        )}
+
+        {/* Emergency Platform Node: Bykea First Responder Courier */}
+        {(radarFilter === 'all' || radarFilter === 'ambulances') && (
+          <button
+            type="button"
+            onClick={() => {
+              soundEffects.playHapticClick();
+              const bykea = EMERGENCY_SERVICES.find((s) => s.id === 'bykea-emergency')!;
+              setSelectedMapEntity({
+                name: 'Bykea Emergency Courier',
+                type: 'First-Aid Biker Pod • Tourniquets',
+                distance: '0.5 km',
+                eta: '1.6 min',
+                phone: '+92 21 38654444',
+                icon: 'two_wheeler',
+                color: '#4edea3',
+                onCall: () => onOpenServiceCall && onOpenServiceCall(bykea),
+                onRoute: () => onOpenServiceRoute && onOpenServiceRoute(bykea),
+              });
+            }}
+            className="absolute z-20 top-[54%] left-[44%] group -translate-x-1/2 -translate-y-1/2 cursor-pointer flex flex-col items-center hover:scale-110 transition-transform"
+          >
+            <div className="relative flex items-center justify-center">
+              <span className="animate-ping absolute h-6 w-6 rounded-full bg-[#4edea3] opacity-40" />
+              <div className="w-6 h-6 rounded-full bg-[#172e25] ring-2 ring-[#4edea3] shadow-[0_0_12px_rgba(78,222,163,0.5)] flex items-center justify-center text-[#4edea3]">
+                <span className="material-symbols-outlined text-[14px]">two_wheeler</span>
+              </div>
+            </div>
+            <span className="mt-1 px-1.5 py-0.5 rounded-md bg-[#0a0e18]/90 border border-[#4edea3]/40 text-[#4edea3] text-[9px] font-extrabold whitespace-nowrap">
+              Bykea (0.5km)
+            </span>
+          </button>
+        )}
+
+        {/* Emergency Platform Node: Services Hospital ER */}
+        {(radarFilter === 'all' || radarFilter === 'hospitals') && (
+          <button
+            type="button"
+            onClick={() => {
+              soundEffects.playHapticClick();
+              const hosp = EMERGENCY_SERVICES.find((s) => s.id === 'services-hospital')!;
+              setSelectedMapEntity({
+                name: 'Services Hospital ER',
+                type: 'Level-1 Emergency Trauma Center',
+                distance: '2.2 km',
+                eta: '5.0 min',
+                phone: '+92 42 99205510',
+                icon: 'local_hospital',
+                color: '#ff334b',
+                onCall: () => onOpenServiceCall && onOpenServiceCall(hosp),
+                onRoute: () => onOpenServiceRoute && onOpenServiceRoute(hosp),
+              });
+            }}
+            className="absolute z-20 top-[48%] left-[80%] group -translate-x-1/2 -translate-y-1/2 cursor-pointer flex flex-col items-center hover:scale-110 transition-transform"
+          >
+            <div className="relative flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-[#26151b] ring-2 ring-[#ff334b] shadow-[0_0_14px_rgba(255,51,75,0.6)] flex items-center justify-center text-[#ff334b]">
+                <span className="material-symbols-outlined text-[16px]">local_hospital</span>
+              </div>
+            </div>
+            <span className="mt-1 px-1.5 py-0.5 rounded-md bg-[#0a0e18]/90 border border-[#ff334b]/40 text-[#ffb3b5] text-[9px] font-extrabold whitespace-nowrap">
+              Services ER (2.2km)
+            </span>
+          </button>
+        )}
 
         {/* Live 50Hz radar watermark */}
         <div className="absolute bottom-3 left-3 z-20 px-2.5 py-1 rounded bg-[#0a0e18]/80 border border-[#262a35] backdrop-blur-sm flex items-center gap-1.5">
@@ -299,6 +482,66 @@ export const RadarView: React.FC<RadarViewProps> = ({ onOpenCall, onOpenRoute })
           </span>
         </div>
       </div>
+
+      {/* Selected Map Entity Quick Popup Card */}
+      {selectedMapEntity && (
+        <div className="w-full rounded-2xl bg-[#1c1f2a] border border-[#00f1fd]/50 p-3.5 shadow-2xl flex items-center justify-between gap-3 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{
+                backgroundColor: `${selectedMapEntity.color}25`,
+                color: selectedMapEntity.color,
+                border: `1px solid ${selectedMapEntity.color}50`,
+              }}
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                {selectedMapEntity.icon}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-display text-xs font-bold text-white truncate">
+                {selectedMapEntity.name}
+              </h4>
+              <p className="text-[10px] text-[#dfe2f1]/60 truncate">{selectedMapEntity.type}</p>
+              <div className="flex items-center gap-2 text-[10px] font-mono-num font-semibold mt-0.5">
+                <span className="text-[#4edea3]">{selectedMapEntity.distance}</span>
+                <span className="text-[#dfe2f1]/40">•</span>
+                <span className="text-[#00f1fd]">{selectedMapEntity.eta}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={selectedMapEntity.onRoute}
+              className="px-2.5 py-1.5 rounded-lg bg-[#262a35] hover:bg-[#313540] text-white text-xs font-bold flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[15px] text-[#00f1fd]">navigation</span>
+              <span>Route</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={selectedMapEntity.onCall}
+              className="px-3 py-1.5 rounded-lg text-white text-xs font-bold flex items-center gap-1 shadow-md"
+              style={{ backgroundColor: selectedMapEntity.color }}
+            >
+              <span className="material-symbols-outlined text-[15px]">call</span>
+              <span>Call</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedMapEntity(null)}
+              className="w-7 h-7 rounded-lg bg-[#171b26] text-[#dfe2f1]/60 hover:text-white flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-[16px]">close</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Range Filter Buttons */}
       <div className="w-full flex items-center justify-between gap-2 p-1.5 rounded-2xl bg-[#171b26] border border-[#262a35]">
@@ -335,16 +578,16 @@ export const RadarView: React.FC<RadarViewProps> = ({ onOpenCall, onOpenRoute })
             Golden Window Defense
           </span>
           <p className="text-xs text-[#dfe2f1]/80 mt-0.5 leading-snug">
-            Community responders provide immediate CPR &amp; wound pressure during the critical 15-to-5 minute golden hour window while Rescue 1122 ambulance is en route.
+            Community responders, Edhi (115), and Bykea emergency bikers provide immediate CPR &amp; arterial bleed wound pressure during the critical 15-to-5 minute window while Rescue 1122 ambulance is en route.
           </p>
         </div>
       </div>
 
-      {/* Active Responders List */}
+      {/* Section 1: Active Farishta Community Responders */}
       <div className="space-y-3">
         <div className="flex items-center justify-between pt-1">
           <h2 className="font-display text-base font-bold text-white tracking-tight">
-            Active Responders
+            Active Community Responders
           </h2>
           <span className="px-2.5 py-0.5 rounded-full bg-[#4edea3]/15 border border-[#4edea3]/30 text-[#4edea3] text-[11px] font-bold">
             Ready for Ping ({filteredResponders.length})
@@ -440,12 +683,82 @@ export const RadarView: React.FC<RadarViewProps> = ({ onOpenCall, onOpenRoute })
         ))}
       </div>
 
+      {/* Section 2: Nearest Emergency Platforms & Fleets Preview */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#00f1fd] text-[20px]">
+              local_shipping
+            </span>
+            <h3 className="font-display text-base font-bold text-white">
+              Nearest Fleets &amp; ER Centers
+            </h3>
+          </div>
+          <span className="text-[11px] text-[#00f1fd] font-bold">115 • 1020 • 1122</span>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2.5">
+          {topNearbyServices.map((svc) => (
+            <div
+              key={svc.id}
+              className="p-3 rounded-2xl bg-[#1c1f2a] border border-[#262a35] flex items-center justify-between gap-3 hover:border-[#00f1fd]/30 transition-all"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{
+                    backgroundColor: `${svc.color}20`,
+                    color: svc.color,
+                    border: `1px solid ${svc.color}40`,
+                  }}
+                >
+                  <span className="material-symbols-outlined text-[20px]">{svc.icon}</span>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-white truncate">{svc.name}</span>
+                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#171b26] border border-[#313540] text-[#00f1fd] font-mono-num font-bold">
+                      {svc.shortCode}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#dfe2f1]/60 truncate block">{svc.address}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="text-right">
+                  <span className="text-[10px] text-[#4edea3] font-bold font-mono-num block">
+                    {svc.distance}
+                  </span>
+                  <span className="text-xs text-[#00f1fd] font-black font-mono-num block">
+                    {svc.eta}
+                  </span>
+                </div>
+
+                <a
+                  href={`tel:${svc.phone}`}
+                  onClick={() => {
+                    soundEffects.playHapticClick();
+                    onOpenServiceCall && onOpenServiceCall(svc);
+                  }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white shadow-md active:scale-95 transition-transform"
+                  style={{ backgroundColor: svc.color }}
+                  title={`Call ${svc.name}`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">call</span>
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Auto-dispatching nearest verified helper tag */}
       <div className="w-full rounded-2xl bg-[#171b26] border border-[#262a35] p-3.5 flex items-center justify-between mt-2">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[#4edea3] text-[20px]">security</span>
           <span className="text-xs text-white font-medium">
-            Auto-dispatching nearest verified helper
+            Auto-dispatching nearest verified helper &amp; fleet
           </span>
         </div>
         <div className="w-2.5 h-2.5 rounded-full bg-[#4edea3] animate-ping" />

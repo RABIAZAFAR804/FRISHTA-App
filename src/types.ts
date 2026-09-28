@@ -1,6 +1,28 @@
-export type TabType = 'monitor' | 'emergency' | 'radar' | 'medical';
+export type TabType = 'monitor' | 'emergency' | 'radar' | 'services' | 'medical';
 
 export type UserRoleMode = 'victim' | 'witness';
+
+export type ServiceCategory = 'all' | 'rescue' | 'hospital' | 'mobility' | 'community';
+
+export interface EmergencyService {
+  id: string;
+  name: string;
+  category: 'rescue' | 'hospital' | 'mobility' | 'community';
+  shortCode?: string; // e.g. "1122", "115", "1020"
+  phone: string;
+  address: string;
+  distance: string;
+  distanceKm: number;
+  eta: string;
+  badge: string;
+  description: string;
+  status: string;
+  verified: boolean;
+  capabilities: string[];
+  icon: string;
+  color: string;
+  coords: { x: number; y: number }; // Radar map coordinates
+}
 
 export interface EmergencyContact {
   id: string;

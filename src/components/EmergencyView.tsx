@@ -329,7 +329,7 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
                     {isDispatched ? '✓ Rescue 1122 CAD Ticket Sent' : '[Pending] Rescue 1122 CAD Ticket'}
                   </span>
                   <span className="text-[10px] text-[#dfe2f1]/50">
-                    Direct Gov Emergency PSAP Integration
+                    Direct Gov Emergency PSAP Integration (Gulberg HQ)
                   </span>
                 </div>
               </div>
@@ -338,7 +338,67 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
               </span>
             </div>
 
-            {/* Step 3 */}
+            {/* Step 3: Edhi & Chhipa Broadcast */}
+            <div
+              className={`flex items-center justify-between p-2.5 rounded-xl border ${
+                isDispatched
+                  ? 'bg-[#172e25] border-[#4edea3]/40 text-white'
+                  : 'bg-[#171b26] border-[#262a35] text-[#dfe2f1]/60'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`w-3 h-3 rounded-full ${
+                    isDispatched ? 'bg-[#00f1fd]' : 'bg-[#313540]'
+                  }`}
+                />
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold">
+                    {isDispatched
+                      ? '✓ Edhi (115) & Chhipa (1020) Alerted'
+                      : '[Pending] Edhi 115 & Chhipa Fleets'}
+                  </span>
+                  <span className="text-[10px] text-[#dfe2f1]/50">
+                    Dual humanitarian ambulance backup broadcast
+                  </span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-[#262a35] text-[10px] font-mono-num">
+                {isDispatched ? 'ALERTED' : 'STANDBY'}
+              </span>
+            </div>
+
+            {/* Step 4: Bykea & Community Bikers */}
+            <div
+              className={`flex items-center justify-between p-2.5 rounded-xl border ${
+                isDispatched
+                  ? 'bg-[#172e25] border-[#4edea3]/40 text-white'
+                  : 'bg-[#171b26] border-[#262a35] text-[#dfe2f1]/60'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`w-3 h-3 rounded-full ${
+                    isDispatched ? 'bg-[#4edea3]' : 'bg-[#313540]'
+                  }`}
+                />
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold">
+                    {isDispatched
+                      ? '✓ Bykea Emergency Biker Pod Dispatched'
+                      : '[Pending] Bykea & Biker Couriers'}
+                  </span>
+                  <span className="text-[10px] text-[#dfe2f1]/50">
+                    First-aid arterial tourniquet carrier (0.5 km)
+                  </span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-[#262a35] text-[10px] font-mono-num">
+                {isDispatched ? 'EN ROUTE' : 'ROUTING'}
+              </span>
+            </div>
+
+            {/* Step 5: SMS Lifelines */}
             <div
               className={`flex items-center justify-between p-2.5 rounded-xl border ${
                 isDispatched
@@ -368,7 +428,7 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
               </span>
             </div>
 
-            {/* Step 4 */}
+            {/* Step 6: Farishta Responders & Hospital ER Pre-Alert */}
             <div
               className={`flex items-center justify-between p-2.5 rounded-xl border ${
                 isDispatched
@@ -385,16 +445,16 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
                 <div className="flex flex-col">
                   <span className="text-xs font-semibold">
                     {isDispatched
-                      ? '✓ 3 Farishta Responders Dispatched'
-                      : '[Pending] Farishta First-Aid Radar'}
+                      ? '✓ Services Hospital ER Pre-Notified'
+                      : '[Pending] Hospital ER Trauma Pre-Alert'}
                   </span>
                   <span className="text-[10px] text-[#dfe2f1]/50">
-                    Alerting 3 certified responders &lt;2km
+                    Trauma resuscitation bay &amp; blood bank on standby
                   </span>
                 </div>
               </div>
               <span className="px-2 py-0.5 rounded bg-[#262a35] text-[10px] font-mono-num">
-                {isDispatched ? 'EN ROUTE' : 'LOCATED'}
+                {isDispatched ? 'RESERVED' : 'SYNCING'}
               </span>
             </div>
           </div>

@@ -1,13 +1,23 @@
 import { useState } from 'react';
-import { TabType, UserRoleMode, Responder } from './types';
+import { TabType, UserRoleMode, Responder, EmergencyService } from './types';
 import { soundEffects } from './utils/audio';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { MonitorView } from './components/MonitorView';
 import { EmergencyView } from './components/EmergencyView';
 import { RadarView } from './components/RadarView';
+import { ServicesHubView } from './components/ServicesHubView';
 import { MedicalCardView } from './components/MedicalCardView';
 import { CallModal, RouteModal, WitnessModal } from './components/Modals';
+
+type CallOrRouteTarget = (Responder | EmergencyService) & {
+  role?: string;
+  affiliation?: string;
+  badge?: string;
+  avatarUrl?: string;
+  icon?: string;
+  color?: string;
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('monitor');
@@ -16,8 +26,8 @@ export default function App() {
   const [isAudioMuted, setIsAudioMuted] = useState(false);
 
   // Modals state
-  const [activeCallResponder, setActiveCallResponder] = useState<Responder | null>(null);
-  const [activeRouteResponder, setActiveRouteResponder] = useState<Responder | null>(null);
+  const [activeCallTarget, setActiveCallTarget] = useState<CallOrRouteTarget | null>(null);
+  const [activeRouteTarget, setActiveRouteTarget] = useState<CallOrRouteTarget | null>(null);
   const [isWitnessModalOpen, setIsWitnessModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -25,7 +35,7 @@ export default function App() {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(null);
-    }, 3200);
+    }, 3400);
   };
 
   const handleToggleMute = () => {
@@ -52,14 +62,20 @@ export default function App() {
   const handleDispatchConfirmed = () => {
     setIsEmergencyActive(true);
     setActiveTab('radar');
-    showToast('🚑 Rescue 1122 CAD Ticket #CR-88219 Created & Farishta Pings Active!');
+    showToast('🚑 Rescue 1122 + Edhi 115 + Chhipa 1020 Alerted • Farishta Responders Active!');
   };
 
   const handleWitnessSubmit = (details: { casualties: string; severity: string; notes: string }) => {
     setIsWitnessModalOpen(false);
     setIsEmergencyActive(true);
     setActiveTab('radar');
-    showToast(`✓ Witness Report Dispatched: ${details.casualties} • CAD #CR-88219`);
+    showToast(`✓ Multi-Agency CAD Dispatched: ${details.casualties} • CAD #CR-88219`);
+  };
+
+  const handleBroadcastAllServices = () => {
+    setIsEmergencyActive(true);
+    setActiveTab('radar');
+    showToast('📡 Simultaneous CAD Broadcast: Rescue 1122, Edhi 115, Chhipa 1020, Bykea & ER Hospitals!');
   };
 
   return (
@@ -94,8 +110,18 @@ export default function App() {
 
         {activeTab === 'radar' && (
           <RadarView
-            onOpenCall={(responder) => setActiveCallResponder(responder)}
-            onOpenRoute={(responder) => setActiveRouteResponder(responder)}
+            onOpenCall={(responder) => setActiveCallTarget(responder)}
+            onOpenRoute={(responder) => setActiveRouteTarget(responder)}
+            onOpenServiceCall={(service) => setActiveCallTarget(service)}
+            onOpenServiceRoute={(service) => setActiveRouteTarget(service)}
+          />
+        )}
+
+        {activeTab === 'services' && (
+          <ServicesHubView
+            onOpenServiceRoute={(service) => setActiveRouteTarget(service)}
+            onOpenServiceCall={(service) => setActiveCallTarget(service)}
+            onBroadcastAllServices={handleBroadcastAllServices}
           />
         )}
 
@@ -112,13 +138,13 @@ export default function App() {
 
       {/* Interactive Modals */}
       <CallModal
-        responder={activeCallResponder}
-        onClose={() => setActiveCallResponder(null)}
+        target={activeCallTarget}
+        onClose={() => setActiveCallTarget(null)}
       />
 
       <RouteModal
-        responder={activeRouteResponder}
-        onClose={() => setActiveRouteResponder(null)}
+        target={activeRouteTarget}
+        onClose={() => setActiveRouteTarget(null)}
       />
 
       <WitnessModal

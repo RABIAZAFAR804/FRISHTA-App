@@ -25,6 +25,8 @@ export const Header: React.FC<HeaderProps> = ({
         return 'Emergency';
       case 'radar':
         return 'Farishta Radar';
+      case 'services':
+        return 'Emergency Hub';
       case 'medical':
         return 'Medical Card';
     }
