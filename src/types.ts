@@ -24,6 +24,44 @@ export interface EmergencyService {
   coords: { x: number; y: number }; // Radar map coordinates
 }
 
+export interface HospitalDestination {
+  id: string;
+  name: string;
+  type: string;
+  address: string;
+  distance: string;
+  distanceKm: number;
+  eta: string;
+  icuBeds: number;
+  bloodBank: boolean;
+  traumaLevel: string;
+  phone: string;
+  assigned1122Station: string;
+  assigned1122Distance: string;
+  assigned1122Eta: string;
+  ambulanceBay: string;
+}
+
+export interface Rescue1122Headquarter {
+  id: string;
+  name: string;
+  division: string;
+  location: string;
+  officerInCharge: string;
+  hotline: string;
+  pingLatency: string;
+  status: 'ONLINE' | 'ACTIVE_DESK' | 'CAD_SYNCED';
+  coverageZones: string[];
+}
+
+export interface RescueSystemConfig {
+  primarySystem: EmergencyService; // Permanent 1122 (LOCKED #1)
+  secondarySystem: EmergencyService; // Selected by victim (Edhi, Chhipa, Bykea, etc.)
+  targetHospital: HospitalDestination; // Nearest hospital chosen by victim
+  forwardToAll1122Headquarters: boolean; // Broadcast to ALL 1122 HQs
+  autoHospitalPreAlert: boolean; // Pre-notify hospital trauma bay
+}
+
 export interface EmergencyContact {
   id: string;
   name: string;

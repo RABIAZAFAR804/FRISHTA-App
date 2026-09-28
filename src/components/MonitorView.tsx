@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { UserRoleMode } from '../types';
+import { UserRoleMode, RescueSystemConfig } from '../types';
 import { soundEffects } from '../utils/audio';
 
 interface MonitorViewProps {
   userRole: UserRoleMode;
+  rescueConfig: RescueSystemConfig;
+  onOpenRescueConfigModal: () => void;
   onToggleUserRole: (role: UserRoleMode) => void;
   onTriggerEmergency: () => void;
   onOpenWitnessModal: () => void;
@@ -11,6 +13,8 @@ interface MonitorViewProps {
 
 export const MonitorView: React.FC<MonitorViewProps> = ({
   userRole,
+  rescueConfig,
+  onOpenRescueConfigModal,
   onToggleUserRole,
   onTriggerEmergency,
   onOpenWitnessModal,
@@ -95,6 +99,51 @@ export const MonitorView: React.FC<MonitorViewProps> = ({
         <div className="flex items-center gap-1 shrink-0 bg-[#262a35] px-2.5 py-0.5 rounded-full">
           <span className="material-symbols-outlined text-[14px] text-[#4edea3]">bolt</span>
           <span className="text-[11px] text-[#4edea3] font-bold font-mono-num">&lt;800ms</span>
+        </div>
+      </div>
+
+      {/* Victim's Configured Rescue System & Nearest Hospital Route Quick-Bar */}
+      <div
+        onClick={() => {
+          soundEffects.playHapticClick();
+          onOpenRescueConfigModal();
+        }}
+        className="bg-[#1c1f2a] border border-[#ff334b]/40 hover:border-[#00f1fd] transition-all rounded-2xl p-2.5 flex items-center justify-between shadow-md cursor-pointer group"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-[#ff334b]/20 text-[#ff334b] flex items-center justify-center font-bold text-xs shrink-0 border border-[#ff334b]/40">
+            <span className="material-symbols-outlined text-[18px]">emergency</span>
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-bold text-white flex items-center gap-1">
+                <span>#1 1122</span>
+                <span className="material-symbols-outlined text-[13px] text-[#ff334b]" title="Fixed Priority 1">
+                  lock
+                </span>
+              </span>
+              <span className="text-[11px] text-[#dfe2f1]/50">•</span>
+              <span className="text-xs font-semibold text-[#00f1fd] truncate">
+                #2 {rescueConfig.secondarySystem.name.split(' ')[0]}
+              </span>
+              <span className="text-[11px] text-[#dfe2f1]/50">•</span>
+              <span className="text-[11px] text-[#4edea3] truncate font-medium">
+                {rescueConfig.targetHospital.name.split(' ')[0]} ({rescueConfig.targetHospital.distance})
+              </span>
+            </div>
+            <span className="text-[10px] text-[#dfe2f1]/60 block truncate">
+              {rescueConfig.forwardToAll1122Headquarters
+                ? 'Broadcast Active: All 5 1122 Regional Command HQs Linked'
+                : '1122 Local PSAP Only'}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0 pl-1 text-[#00f1fd]">
+          <span className="text-[10px] font-bold uppercase hidden sm:inline">Modify</span>
+          <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">
+            tune
+          </span>
         </div>
       </div>
 

@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SlideToCancel } from './SlideToCancel';
+import { RescueSystemConfig } from '../types';
 import { soundEffects } from '../utils/audio';
 
 interface EmergencyViewProps {
+  rescueConfig?: RescueSystemConfig;
   onCancelEmergency: () => void;
   onDispatchConfirmed: () => void;
   isAudioMuted: boolean;
 }
 
 export const EmergencyView: React.FC<EmergencyViewProps> = ({
+  rescueConfig,
   onCancelEmergency,
   onDispatchConfirmed,
   isAudioMuted,
@@ -310,7 +313,7 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
               </span>
             </div>
 
-            {/* Step 2 */}
+            {/* Step 2: Rescue 1122 Locked Master CAD */}
             <div
               className={`flex items-center justify-between p-2.5 rounded-xl border ${
                 isDispatched
@@ -325,20 +328,23 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
                   }`}
                 />
                 <div className="flex flex-col">
-                  <span className="text-xs font-semibold">
-                    {isDispatched ? '✓ Rescue 1122 CAD Ticket Sent' : '[Pending] Rescue 1122 CAD Ticket'}
+                  <span className="text-xs font-semibold flex items-center gap-1.5">
+                    <span>{isDispatched ? '✓ Rescue 1122 Master CAD Sent' : '[Priority #1] Rescue 1122 CAD'}</span>
+                    <span className="material-symbols-outlined text-[12px] text-[#ff334b]">lock</span>
                   </span>
                   <span className="text-[10px] text-[#dfe2f1]/50">
-                    Direct Gov Emergency PSAP Integration (Gulberg HQ)
+                    {rescueConfig?.forwardToAll1122Headquarters
+                      ? 'Forwarded to ALL 5 1122 Regional & Provincial HQs'
+                      : 'Direct Gov Emergency PSAP Integration (Gulberg HQ)'}
                   </span>
                 </div>
               </div>
-              <span className="px-2 py-0.5 rounded bg-[#262a35] text-[10px] font-mono-num">
-                {isDispatched ? 'TRANSMITTED' : 'QUEUED'}
+              <span className="px-2 py-0.5 rounded bg-[#262a35] text-[10px] font-mono-num font-bold">
+                {isDispatched ? 'TRANSMITTED' : 'LOCKED #1'}
               </span>
             </div>
 
-            {/* Step 3: Edhi & Chhipa Broadcast */}
+            {/* Step 3: Configured Secondary Fleet */}
             <div
               className={`flex items-center justify-between p-2.5 rounded-xl border ${
                 isDispatched
@@ -355,16 +361,16 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
                 <div className="flex flex-col">
                   <span className="text-xs font-semibold">
                     {isDispatched
-                      ? '✓ Edhi (115) & Chhipa (1020) Alerted'
-                      : '[Pending] Edhi 115 & Chhipa Fleets'}
+                      ? `✓ ${rescueConfig?.secondarySystem.name || 'Edhi Foundation 115'} Alerted`
+                      : `[Secondary Fleet] ${rescueConfig?.secondarySystem.name || 'Edhi Foundation 115'}`}
                   </span>
                   <span className="text-[10px] text-[#dfe2f1]/50">
-                    Dual humanitarian ambulance backup broadcast
+                    Victim configured backup fleet • {rescueConfig?.secondarySystem.distance || '1.4 km'}
                   </span>
                 </div>
               </div>
               <span className="px-2 py-0.5 rounded bg-[#262a35] text-[10px] font-mono-num">
-                {isDispatched ? 'ALERTED' : 'STANDBY'}
+                {isDispatched ? 'ALERTED' : 'CONFIGURED'}
               </span>
             </div>
 
@@ -428,7 +434,7 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
               </span>
             </div>
 
-            {/* Step 6: Farishta Responders & Hospital ER Pre-Alert */}
+            {/* Step 6: Configured Nearest Target Hospital ER */}
             <div
               className={`flex items-center justify-between p-2.5 rounded-xl border ${
                 isDispatched
@@ -445,16 +451,16 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
                 <div className="flex flex-col">
                   <span className="text-xs font-semibold">
                     {isDispatched
-                      ? '✓ Services Hospital ER Pre-Notified'
-                      : '[Pending] Hospital ER Trauma Pre-Alert'}
+                      ? `✓ ${rescueConfig?.targetHospital.name || 'Services Hospital'} ER Pre-Notified`
+                      : `[Nearest Target ER] ${rescueConfig?.targetHospital.name || 'Services Hospital'}`}
                   </span>
                   <span className="text-[10px] text-[#dfe2f1]/50">
-                    Trauma resuscitation bay &amp; blood bank on standby
+                    Trauma bay reserved via {rescueConfig?.targetHospital.assigned1122Station || 'Station #12'}
                   </span>
                 </div>
               </div>
-              <span className="px-2 py-0.5 rounded bg-[#262a35] text-[10px] font-mono-num">
-                {isDispatched ? 'RESERVED' : 'SYNCING'}
+              <span className="px-2 py-0.5 rounded bg-[#262a35] text-[10px] font-mono-num font-bold">
+                {isDispatched ? 'RESERVED' : rescueConfig?.targetHospital.distance || '2.2 km'}
               </span>
             </div>
           </div>

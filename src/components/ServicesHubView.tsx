@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { EmergencyService, ServiceCategory } from '../types';
+import { EmergencyService, ServiceCategory, RescueSystemConfig } from '../types';
 import { EMERGENCY_SERVICES } from '../data/emergencyServices';
 import { soundEffects } from '../utils/audio';
 
 interface ServicesHubViewProps {
+  rescueConfig: RescueSystemConfig;
+  onOpenRescueConfigModal: () => void;
   onOpenServiceRoute: (service: EmergencyService) => void;
   onOpenServiceCall: (service: EmergencyService) => void;
   onBroadcastAllServices: () => void;
 }
 
 export const ServicesHubView: React.FC<ServicesHubViewProps> = ({
+  rescueConfig,
+  onOpenRescueConfigModal,
   onOpenServiceRoute,
   onOpenServiceCall,
   onBroadcastAllServices,
@@ -79,6 +83,140 @@ export const ServicesHubView: React.FC<ServicesHubViewProps> = ({
             <span className="material-symbols-outlined text-[16px] animate-pulse">campaign</span>
             <span>Broadcast All</span>
           </button>
+        </div>
+      </div>
+
+      {/* Victim's Configured Rescue System & Nearest Hospital Card */}
+      <div className="w-full rounded-2xl bg-[#1c1f2a] border border-[#ff334b]/40 p-4 shadow-xl space-y-3 relative overflow-hidden">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#ff334b] text-[20px]">
+              settings_suggest
+            </span>
+            <h3 className="font-display text-xs font-bold text-white uppercase tracking-wider">
+              Active Rescue System &amp; Nearest ER
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              soundEffects.playHapticClick();
+              onOpenRescueConfigModal();
+            }}
+            className="px-2.5 py-1 rounded-lg bg-[#262a35] hover:bg-[#313540] border border-[#00f1fd]/40 text-[#00f1fd] text-xs font-bold flex items-center gap-1 active:scale-95 transition-all"
+          >
+            <span className="material-symbols-outlined text-[14px]">tune</span>
+            <span>Update System</span>
+          </button>
+        </div>
+
+        {/* Priority Grid: #1 Locked 1122 + #2 Replaceable Secondary + Target Hospital */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {/* Priority #1: 1122 (LOCKED) */}
+          <div className="p-3 rounded-xl bg-[#26151b] border border-[#ff334b]/50 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-[#ff334b] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-md">
+                #1
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1">
+                  <span className="text-xs font-bold text-white truncate">Rescue 1122</span>
+                  <span className="material-symbols-outlined text-[14px] text-[#ff334b]" title="Locked - Cannot be replaced">
+                    lock
+                  </span>
+                </div>
+                <span className="text-[10px] text-[#ffb3b5] font-semibold block">
+                  Govt Mandatory CAD • FIXED
+                </span>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-[#ff334b]/30 text-[#ffdad6] text-[9px] font-mono-num font-bold">
+              0.8 km
+            </span>
+          </div>
+
+          {/* Priority #2: Replaceable Secondary (e.g. Edhi / Chhipa / Bykea) */}
+          <div
+            onClick={() => {
+              soundEffects.playHapticClick();
+              onOpenRescueConfigModal();
+            }}
+            className="p-3 rounded-xl bg-[#17252f] border border-[#00f1fd]/40 hover:border-[#00f1fd] transition-colors cursor-pointer flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-[#00f1fd] text-[#00373a] flex items-center justify-center font-black text-xs shrink-0 shadow-md">
+                #2
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1">
+                  <span className="text-xs font-bold text-white truncate">
+                    {rescueConfig.secondarySystem.name}
+                  </span>
+                  <span className="material-symbols-outlined text-[13px] text-[#00f1fd]">
+                    swap_horiz
+                  </span>
+                </div>
+                <span className="text-[10px] text-[#00f1fd] block truncate">
+                  Victim Replaceable Fleet
+                </span>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-[#00f1fd]/20 text-[#00f1fd] text-[9px] font-mono-num font-bold">
+              {rescueConfig.secondarySystem.distance}
+            </span>
+          </div>
+        </div>
+
+        {/* Nearest Hospital ER Target Row */}
+        <div
+          onClick={() => {
+            soundEffects.playHapticClick();
+            onOpenRescueConfigModal();
+          }}
+          className="p-3 rounded-xl bg-[#171b26] border border-[#262a35] hover:border-[#4edea3]/50 transition-colors cursor-pointer flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[#4edea3]/20 text-[#4edea3] flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[18px]">local_hospital</span>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-white truncate">
+                  Target ER: {rescueConfig.targetHospital.name}
+                </span>
+                <span className="text-[9px] text-[#4edea3] font-bold">
+                  ({rescueConfig.targetHospital.icuBeds} ICU Beds)
+                </span>
+              </div>
+              <span className="text-[10px] text-[#dfe2f1]/60 truncate block">
+                {rescueConfig.targetHospital.traumaLevel} • Assigned: {rescueConfig.targetHospital.assigned1122Station}
+              </span>
+            </div>
+          </div>
+
+          <div className="text-right shrink-0 pl-2">
+            <span className="text-xs font-bold text-[#4edea3] font-mono-num block">
+              {rescueConfig.targetHospital.distance}
+            </span>
+            <span className="text-[10px] text-[#00f1fd] font-extrabold font-mono-num block">
+              {rescueConfig.targetHospital.eta}
+            </span>
+          </div>
+        </div>
+
+        {/* Multi-HQ Forwarding Status Strip */}
+        <div className="pt-1 flex items-center justify-between text-[11px] text-[#dfe2f1]/80 border-t border-[#262a35]">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#4edea3] animate-pulse" />
+            <span className="text-white font-medium">
+              {rescueConfig.forwardToAll1122Headquarters
+                ? 'Forwarding Enabled to ALL 1122 Headquarters & Regional Desks'
+                : '1122 Local Station Dispatch Only'}
+            </span>
+          </div>
+          <span className="text-[10px] text-[#4edea3] font-mono-num font-bold">
+            5 HQS LINKED
+          </span>
         </div>
       </div>
 

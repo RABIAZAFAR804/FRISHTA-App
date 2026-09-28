@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { TabType, UserRoleMode, Responder, EmergencyService } from './types';
+import { TabType, UserRoleMode, Responder, EmergencyService, RescueSystemConfig } from './types';
+import { DEFAULT_RESCUE_CONFIG } from './data/emergencyServices';
 import { soundEffects } from './utils/audio';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
@@ -9,6 +10,7 @@ import { RadarView } from './components/RadarView';
 import { ServicesHubView } from './components/ServicesHubView';
 import { MedicalCardView } from './components/MedicalCardView';
 import { CallModal, RouteModal, WitnessModal } from './components/Modals';
+import { RescueSystemManagerModal } from './components/RescueSystemManagerModal';
 
 type CallOrRouteTarget = (Responder | EmergencyService) & {
   role?: string;
@@ -24,6 +26,10 @@ export default function App() {
   const [userRole, setUserRole] = useState<UserRoleMode>('victim');
   const [isEmergencyActive, setIsEmergencyActive] = useState(false);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
+
+  // Victim's Configured Rescue System (#1 1122 Locked, Secondary Replaceable, Nearest Hospital)
+  const [rescueConfig, setRescueConfig] = useState<RescueSystemConfig>(DEFAULT_RESCUE_CONFIG);
+  const [isRescueConfigModalOpen, setIsRescueConfigModalOpen] = useState(false);
 
   // Modals state
   const [activeCallTarget, setActiveCallTarget] = useState<CallOrRouteTarget | null>(null);
@@ -62,20 +68,20 @@ export default function App() {
   const handleDispatchConfirmed = () => {
     setIsEmergencyActive(true);
     setActiveTab('radar');
-    showToast('🚑 Rescue 1122 + Edhi 115 + Chhipa 1020 Alerted • Farishta Responders Active!');
+    showToast(`🚑 1122 + ${rescueConfig.secondarySystem.name} Dispatched to ${rescueConfig.targetHospital.name}!`);
   };
 
   const handleWitnessSubmit = (details: { casualties: string; severity: string; notes: string }) => {
     setIsWitnessModalOpen(false);
     setIsEmergencyActive(true);
     setActiveTab('radar');
-    showToast(`✓ Multi-Agency CAD Dispatched: ${details.casualties} • CAD #CR-88219`);
+    showToast(`✓ Multi-Agency CAD Dispatched: ${details.casualties} • Target: ${rescueConfig.targetHospital.name}`);
   };
 
   const handleBroadcastAllServices = () => {
     setIsEmergencyActive(true);
     setActiveTab('radar');
-    showToast('📡 Simultaneous CAD Broadcast: Rescue 1122, Edhi 115, Chhipa 1020, Bykea & ER Hospitals!');
+    showToast(`📡 Simultaneous CAD Broadcast: Rescue 1122 (All HQs), ${rescueConfig.secondarySystem.name} & ${rescueConfig.targetHospital.name}!`);
   };
 
   return (
@@ -94,6 +100,8 @@ export default function App() {
         {activeTab === 'monitor' && (
           <MonitorView
             userRole={userRole}
+            rescueConfig={rescueConfig}
+            onOpenRescueConfigModal={() => setIsRescueConfigModalOpen(true)}
             onToggleUserRole={setUserRole}
             onTriggerEmergency={handleTriggerSOS}
             onOpenWitnessModal={() => setIsWitnessModalOpen(true)}
@@ -102,6 +110,7 @@ export default function App() {
 
         {activeTab === 'emergency' && (
           <EmergencyView
+            rescueConfig={rescueConfig}
             onCancelEmergency={handleCancelEmergency}
             onDispatchConfirmed={handleDispatchConfirmed}
             isAudioMuted={isAudioMuted}
@@ -119,6 +128,8 @@ export default function App() {
 
         {activeTab === 'services' && (
           <ServicesHubView
+            rescueConfig={rescueConfig}
+            onOpenRescueConfigModal={() => setIsRescueConfigModalOpen(true)}
             onOpenServiceRoute={(service) => setActiveRouteTarget(service)}
             onOpenServiceCall={(service) => setActiveCallTarget(service)}
             onBroadcastAllServices={handleBroadcastAllServices}
@@ -151,6 +162,17 @@ export default function App() {
         isOpen={isWitnessModalOpen}
         onClose={() => setIsWitnessModalOpen(false)}
         onSubmit={handleWitnessSubmit}
+      />
+
+      {/* Victim's Rescue System & Nearest Hospital Manager Modal */}
+      <RescueSystemManagerModal
+        isOpen={isRescueConfigModalOpen}
+        onClose={() => setIsRescueConfigModalOpen(false)}
+        config={rescueConfig}
+        onSaveConfig={(newConfig) => {
+          setRescueConfig(newConfig);
+          showToast(`✓ Rescue Updated: #1 1122 (Fixed) + #2 ${newConfig.secondarySystem.name} • Destination: ${newConfig.targetHospital.name}`);
+        }}
       />
 
       {/* Bottom Sticky Tab Navigation */}
