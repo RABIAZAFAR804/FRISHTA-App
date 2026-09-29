@@ -1,7 +1,25 @@
 import React, { useState } from 'react';
+import { EmergencyContact } from '../types';
+import { INITIAL_EMERGENCY_CONTACTS } from '../data/initialContacts';
 import { soundEffects } from '../utils/audio';
 
-export const MedicalCardView: React.FC = () => {
+interface MedicalCardViewProps {
+  contacts?: EmergencyContact[];
+  onAddContact?: () => void;
+  onEditContact?: (contact: EmergencyContact) => void;
+  onDeleteContact?: (contactId: string) => void;
+  onChooseFromPhone?: () => void;
+  onShowToast?: (message: string) => void;
+}
+
+export const MedicalCardView: React.FC<MedicalCardViewProps> = ({
+  contacts = INITIAL_EMERGENCY_CONTACTS,
+  onAddContact,
+  onEditContact,
+  onDeleteContact,
+  onChooseFromPhone,
+  onShowToast,
+}) => {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
@@ -16,15 +34,6 @@ export const MedicalCardView: React.FC = () => {
 
   const ahmedAvatar =
     'https://lh3.googleusercontent.com/aida-public/AB6AXuAsDr3Uot9TpIYD8CSJWdHEBXbmBE8Y_6N5Uxvz-d2kDWS_2s6NSPc0C28q7CV40vx_qaHjgBY-uHxe9v8sJahH0t7yCOJMEwHrwYatqwVB8v79Luz3Jb4ZEs3uvkqb9BjLY7NvaQLiAKHighr_9LbpnjSn0vWClpxbJ6htsh0MTIwrvSoTQU9M5yjoFYUoqHB_VdGuJjL6JocHIi2_yXchvuRls81nfYHJW5icwdlx7XFCKP-D72Vm';
-
-  const fatimaAvatar =
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBNq8ElZ72r7whtxXl-7Q2rMMlqtLA-u2Bsf6hL2vUZi1U6K7chpxV_2rND7CCiFYIgkHCiquevKCOmaY6Iucvu4SGtj0tYhNG_zCZQ0Z9LKemTIUsEVYxy17uOBcwXKZkQtlFurAjy5F2Hd5-7KNO1FJlhwySza8l6zGZJVNccUIFlmDgetOfrhaB7_VX9tJRlOIElrCHAXWZnRvLhlDObIc1lQnvDuXryaFa0apfJ9kNJql1hSA7O';
-
-  const tariqAvatar =
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuCParALQHnaCYQ0-GMNeWxcoP9N-kXoAVAifUfETAjv7GKI0YDxbMGCRsUsFqfvgffhyiCdiwN9nzYm6DmAKZFeWpofAdSlAYy0DQzjDAlcLrpoDlcaaYBeyaxoS0Wn2PGkM4Wp6rKRPDXNxbqYmDEjerBvg-byrhh_mDo7q9j6pO-rqUaxgIFDo6N7LLG57AhjPawuhsQM-u6VXm-fw_kjvTc3zqfpQOBcT9EDM9rI-4euyWlR6lmf';
-
-  const bilalAvatar =
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDwEwn7v2UVZV3QbURlKNITPrTYmfyFPemL0CDTkCo2Vshqe-4FvA8yKlbQzZ254Rg7LlGin7V-iFG1RoXUViZw5uIAJpqF2Hr5jU0FDOa5QKcpMsKuSE3ufsHeHpST6KJJIHaMPq7NeVkA_syg_spQZNwm1X3rL0_TjbdKF4crUS-9x9oyfHDkdWpWRDdmKDqDALQOTdipCOeWYoffxO_XK-dCJS2bpLG8WglH0-pPMDLS4qrmBELc';
 
   return (
     <div className="flex flex-col w-full pb-28 pt-2 px-4 max-w-xl mx-auto space-y-4 animate-in fade-in duration-300">
@@ -170,7 +179,7 @@ export const MedicalCardView: React.FC = () => {
         </div>
       </div>
 
-      {/* Section 2: Registered Emergency Lifelines (3 Contacts) */}
+      {/* Section 2: Registered Emergency Lifelines */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
@@ -179,158 +188,181 @@ export const MedicalCardView: React.FC = () => {
             </span>
             <h2 className="font-display text-base font-bold text-white">Emergency Lifelines</h2>
           </div>
-          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#4edea3]/20 border border-[#4edea3]/40 text-[#4edea3] font-bold tracking-wide font-mono-num">
-            3/3 CONFIGURED
-          </span>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#4edea3]/20 border border-[#4edea3]/40 text-[#4edea3] font-bold tracking-wide font-mono-num">
+              {contacts.length} CONFIGURED
+            </span>
+          </div>
         </div>
 
-        {/* Contact 1: Fatima (Spouse) - PRIMARY LIFELINE */}
-        <div className="relative overflow-hidden rounded-2xl bg-[#1c1f2a] border border-[#262a35] p-4 shadow-md space-y-2.5">
-          <div className="absolute right-0 top-0 w-24 h-24 bg-[#00f1fd]/10 rounded-full blur-xl pointer-events-none" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <img
-                src={fatimaAvatar}
-                alt="Fatima"
-                className="w-11 h-11 rounded-full object-cover ring-2 ring-[#4edea3]"
-                onError={(e) => {
-                  (e.currentTarget as HTMLElement).style.display = 'none';
-                }}
-              />
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-display font-bold text-sm text-white truncate">Fatima</span>
-                  <span className="text-xs text-[#dfe2f1]/60">(Spouse)</span>
+        {/* Quick Add and Choose buttons */}
+        <div className="grid grid-cols-2 gap-2">
+          {onAddContact && (
+            <button
+              type="button"
+              onClick={() => {
+                soundEffects.playHapticClick();
+                onAddContact();
+              }}
+              className="py-2 px-3 rounded-xl bg-[#262a35] hover:bg-[#313540] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-[#313540]"
+            >
+              <span className="material-symbols-outlined text-[16px] text-[#ff334b]">person_add</span>
+              <span>Add Contact</span>
+            </button>
+          )}
+
+          {onChooseFromPhone && (
+            <button
+              type="button"
+              onClick={() => {
+                soundEffects.playHapticClick();
+                onChooseFromPhone();
+              }}
+              className="py-2 px-3 rounded-xl bg-[#262a35] hover:bg-[#313540] text-[#00f1fd] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-[#00f1fd]/30"
+            >
+              <span className="material-symbols-outlined text-[16px]">contacts</span>
+              <span>Choose from Contacts</span>
+            </button>
+          )}
+        </div>
+
+        {/* Dynamic Contacts List */}
+        {contacts.map((contact) => {
+          const isAlertOn = contact.enabledAlert !== false;
+
+          return (
+            <div
+              key={contact.id}
+              className="relative overflow-hidden rounded-2xl bg-[#1c1f2a] border border-[#262a35] p-4 shadow-md space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  {contact.avatarUrl ? (
+                    <img
+                      src={contact.avatarUrl}
+                      alt={contact.name}
+                      className="w-11 h-11 rounded-full object-cover ring-2 ring-[#4edea3] shrink-0"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#ff334b] to-[#be0035] text-white font-bold text-xs flex items-center justify-center ring-2 ring-[#4edea3] shrink-0">
+                      {contact.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-display font-bold text-sm text-white truncate">
+                        {contact.name}
+                      </span>
+                      <span className="text-xs text-[#dfe2f1]/60">({contact.relation})</span>
+                    </div>
+                    <p className="text-xs text-[#00f1fd] tracking-wide font-mono-num font-semibold">
+                      {contact.phone}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-[#00f1fd] tracking-wide font-mono-num font-semibold">
-                  +92 300 1234567
-                </p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <a
-                href="tel:+923001234567"
-                onClick={() => soundEffects.playHapticClick()}
-                aria-label="Call Fatima"
-                className="w-10 h-10 rounded-full bg-[#4edea3] text-[#002113] flex items-center justify-center shadow-md active:scale-95 transition-transform"
-              >
+                <div className="flex items-center gap-1.5">
+                  <a
+                    href={`tel:${contact.phone}`}
+                    onClick={() => soundEffects.playHapticClick()}
+                    aria-label={`Call ${contact.name}`}
+                    className="w-9 h-9 rounded-full bg-[#4edea3] text-[#002113] flex items-center justify-center shadow-md active:scale-95 transition-transform"
+                  >
+                    <span
+                      className="material-symbols-outlined text-[18px]"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      call
+                    </span>
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      soundEffects.playHapticClick();
+                      if (onShowToast) {
+                        onShowToast(`Simulated Live GPS SMS sent to ${contact.name} (${contact.phone})`);
+                      }
+                    }}
+                    aria-label="Send Live GPS SMS"
+                    className="w-9 h-9 rounded-full bg-[#262a35] text-white flex items-center justify-center hover:bg-[#313540] active:scale-95 transition-transform"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">sms</span>
+                  </button>
+
+                  {onEditContact && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundEffects.playHapticClick();
+                        onEditContact(contact);
+                      }}
+                      aria-label="Edit Contact"
+                      className="w-9 h-9 rounded-full bg-[#262a35] text-[#dfe2f1] flex items-center justify-center hover:bg-[#313540] active:scale-95 transition-transform"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                    </button>
+                  )}
+
+                  {onDeleteContact && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundEffects.playHapticClick();
+                        onDeleteContact(contact.id);
+                        if (onShowToast) onShowToast(`Removed ${contact.name}`);
+                      }}
+                      aria-label="Remove Contact"
+                      className="w-9 h-9 rounded-full bg-[#262a35] text-[#ffb3b5] hover:text-[#ff334b] flex items-center justify-center hover:bg-[#93000a]/30 active:scale-95 transition-transform"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[#262a35]">
+                {contact.isPrimary && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#ff334b]/20 border border-[#ff334b]/40 text-[#ffb3b5] text-[10px] font-bold">
+                    <span
+                      className="material-symbols-outlined text-[12px]"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      star
+                    </span>
+                    <span>PRIMARY LIFELINE</span>
+                  </span>
+                )}
+
                 <span
-                  className="material-symbols-outlined text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    isAlertOn
+                      ? 'bg-[#4edea3]/20 border-[#4edea3]/40 text-[#4edea3]'
+                      : 'bg-[#313540] border-[#313540] text-[#dfe2f1]/50'
+                  }`}
                 >
-                  call
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isAlertOn ? 'bg-[#4edea3] animate-pulse' : 'bg-[#dfe2f1]/40'
+                    }`}
+                  />
+                  <span>{isAlertOn ? 'SMS LIVE TRACKING ENABLED' : 'ALERT MUTED'}</span>
                 </span>
-              </a>
-              <button
-                type="button"
-                onClick={() => {
-                  soundEffects.playHapticClick();
-                  alert('Simulated Live GPS SMS sent to Fatima (+92 300 1234567)');
-                }}
-                aria-label="Send Live GPS SMS"
-                className="w-10 h-10 rounded-full bg-[#262a35] text-white flex items-center justify-center hover:bg-[#313540] active:scale-95 transition-transform"
-              >
-                <span className="material-symbols-outlined text-[20px]">sms</span>
-              </button>
-            </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[#262a35]">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#ff334b]/20 border border-[#ff334b]/40 text-[#ffb3b5] text-[10px] font-bold">
-              <span
-                className="material-symbols-outlined text-[12px]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                star
-              </span>
-              <span>PRIMARY CONTACT</span>
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#4edea3]/20 border border-[#4edea3]/40 text-[#4edea3] text-[10px] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse" />
-              <span>SMS LIVE TRACKING ENABLED</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Contact 2: Dr. Tariq (Father) */}
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-[#1c1f2a] border border-[#262a35] shadow-md">
-          <div className="flex items-center gap-3 min-w-0">
-            <img
-              src={tariqAvatar}
-              alt="Dr. Tariq"
-              className="w-11 h-11 rounded-full object-cover ring-2 ring-[#313540]"
-              onError={(e) => {
-                (e.currentTarget as HTMLElement).style.display = 'none';
-              }}
-            />
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-display font-bold text-sm text-white truncate">
-                  Dr. Tariq
-                </span>
-                <span className="text-xs text-[#dfe2f1]/60">(Father)</span>
-              </div>
-              <p className="text-xs text-[#dfe2f1]/80 font-mono-num">+92 300 7654321</p>
-              <div className="flex items-center gap-1 mt-0.5 text-[10px] text-[#00f1fd]">
-                <span className="material-symbols-outlined text-[13px]">local_hospital</span>
-                <span>Medical Doctor • First Responder</span>
+                {contact.notes && (
+                  <span className="text-[10px] text-[#dfe2f1]/60 italic ml-auto truncate max-w-[200px]">
+                    {contact.notes}
+                  </span>
+                )}
               </div>
             </div>
-          </div>
-
-          <a
-            href="tel:+923007654321"
-            onClick={() => soundEffects.playHapticClick()}
-            aria-label="Call Dr. Tariq"
-            className="w-10 h-10 rounded-full bg-[#262a35] text-[#4edea3] flex items-center justify-center shadow-sm active:scale-95 transition-transform hover:bg-[#313540]"
-          >
-            <span
-              className="material-symbols-outlined text-[20px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              call
-            </span>
-          </a>
-        </div>
-
-        {/* Contact 3: Bilal (Brother) */}
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-[#1c1f2a] border border-[#262a35] shadow-md">
-          <div className="flex items-center gap-3 min-w-0">
-            <img
-              src={bilalAvatar}
-              alt="Bilal"
-              className="w-11 h-11 rounded-full object-cover ring-2 ring-[#313540]"
-              onError={(e) => {
-                (e.currentTarget as HTMLElement).style.display = 'none';
-              }}
-            />
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-display font-bold text-sm text-white truncate">Bilal</span>
-                <span className="text-xs text-[#dfe2f1]/60">(Brother)</span>
-              </div>
-              <p className="text-xs text-[#dfe2f1]/80 font-mono-num">+92 333 1122334</p>
-              <span className="text-[10px] text-[#dfe2f1]/60">
-                Kin Contact • Proximity: 4.2 km
-              </span>
-            </div>
-          </div>
-
-          <a
-            href="tel:+923331122334"
-            onClick={() => soundEffects.playHapticClick()}
-            aria-label="Call Bilal"
-            className="w-10 h-10 rounded-full bg-[#262a35] text-white flex items-center justify-center shadow-sm active:scale-95 transition-transform hover:bg-[#313540]"
-          >
-            <span
-              className="material-symbols-outlined text-[20px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              call
-            </span>
-          </a>
-        </div>
+          );
+        })}
       </div>
 
       {/* Section 3: Rescue 1122 CAD Integration & NFC Badge */}

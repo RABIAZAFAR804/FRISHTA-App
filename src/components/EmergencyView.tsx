@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SlideToCancel } from './SlideToCancel';
-import { RescueSystemConfig } from '../types';
+import { RescueSystemConfig, EmergencyContact } from '../types';
 import { soundEffects } from '../utils/audio';
 
 interface EmergencyViewProps {
   rescueConfig?: RescueSystemConfig;
+  contacts?: EmergencyContact[];
   onCancelEmergency: () => void;
   onDispatchConfirmed: () => void;
   isAudioMuted: boolean;
@@ -12,6 +13,7 @@ interface EmergencyViewProps {
 
 export const EmergencyView: React.FC<EmergencyViewProps> = ({
   rescueConfig,
+  contacts = [],
   onCancelEmergency,
   onDispatchConfirmed,
   isAudioMuted,
@@ -74,6 +76,8 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
       onDispatchConfirmed();
     }, 800);
   };
+
+  const targetContacts = contacts.filter((c) => c.enabledAlert !== false);
 
   return (
     <div className="flex flex-col w-full pb-28 pt-1 max-w-xl mx-auto animate-in fade-in duration-300">
@@ -271,6 +275,91 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
           </button>
         </div>
 
+        {/* Emergency Contacts Targeted for Dispatch Card */}
+        <div className="bg-[#1c1f2a] border border-[#ff334b]/40 rounded-2xl p-4 shadow-xl flex flex-col gap-3 relative overflow-hidden">
+          <div className="flex items-center justify-between pb-2 border-b border-[#262a35]">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[20px] text-[#ff334b]">
+                notifications_active
+              </span>
+              <div>
+                <h4 className="font-display text-xs font-black text-white uppercase tracking-wider">
+                  Contacts Receiving Accident Alert
+                </h4>
+                <p className="text-[10px] text-[#dfe2f1]/60">
+                  Live GPS accident pin dispatched automatically after 10 seconds
+                </p>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-[#4edea3]/20 border border-[#4edea3]/40 text-[#4edea3] text-[10px] font-bold font-mono-num">
+              {targetContacts.length} ACTIVE
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {targetContacts.length === 0 ? (
+              <div className="p-3 text-center text-xs text-[#dfe2f1]/60">
+                No emergency contacts enabled.
+              </div>
+            ) : (
+              targetContacts.map((contact) => (
+                <div
+                  key={contact.id}
+                  className={`p-2.5 rounded-xl border flex items-center justify-between transition-all ${
+                    isDispatched
+                      ? 'bg-[#172e25] border-[#4edea3]/40 text-white'
+                      : isCancelled
+                      ? 'bg-[#171b26] border-[#262a35] text-[#dfe2f1]/50'
+                      : 'bg-[#171b26] border-[#313540] text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-[#ff334b]/20 border border-[#ff334b]/40 text-[#ff334b] font-bold text-xs flex items-center justify-center shrink-0">
+                      {contact.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-white truncate">{contact.name}</span>
+                        <span className="text-[10px] text-[#dfe2f1]/60">({contact.relation})</span>
+                        {contact.isPrimary && (
+                          <span className="text-[8px] px-1.5 py-0.2 rounded bg-[#ff334b]/20 text-[#ffb3b5] font-bold">
+                            PRIMARY
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-[#00f1fd] font-mono-num block">
+                        {contact.phone}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    {isDispatched ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#4edea3]">
+                        <span>SMS SENT 🟢</span>
+                      </span>
+                    ) : isCancelled ? (
+                      <span className="text-[10px] font-bold text-[#dfe2f1]/40">
+                        ABORTED
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#eab308]/20 border border-[#eab308]/40 text-[#fde047] text-[10px] font-bold font-mono-num animate-pulse">
+                        <span>Dispatch in {timeLeft}s</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* SMS Payload Display */}
+          <div className="p-2.5 rounded-xl bg-[#121622] border border-[#262a35] text-[10px] font-mono text-[#dfe2f1]/80 leading-relaxed">
+            <span className="text-[#00f1fd] font-bold block mb-0.5">DISPATCH SMS PAYLOAD:</span>
+            &ldquo;🚨 FARISHTA ACCIDENT: Bike impact at 31.5210° N, 74.3485° E. Rescue 1122 active. Live tracking: https://farishta.app/track/CR-88219&rdquo;
+          </div>
+        </div>
+
         {/* Autonomous CAD Pipeline Checklist */}
         <div className="bg-[#1c1f2a] border border-[#262a35] rounded-2xl p-4 shadow-md flex flex-col gap-3">
           <div className="flex items-center justify-between pb-1 border-b border-[#262a35]">
@@ -412,25 +501,25 @@ export const EmergencyView: React.FC<EmergencyViewProps> = ({
                   : 'bg-[#171b26] border-[#262a35] text-[#dfe2f1]/60'
               }`}
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <span
-                  className={`w-3 h-3 rounded-full ${
+                  className={`w-3 h-3 rounded-full shrink-0 ${
                     isDispatched ? 'bg-[#4edea3]' : 'bg-[#313540]'
                   }`}
                 />
-                <div className="flex flex-col">
+                <div className="flex flex-col min-w-0">
                   <span className="text-xs font-semibold">
                     {isDispatched
-                      ? '✓ SMS Broadcasted to 3 Lifelines'
-                      : '[Pending] SMS to 3 Emergency Contacts'}
+                      ? `✓ SMS Broadcasted to ${targetContacts.length} Emergency Contacts`
+                      : `[Pending 10s] SMS to ${targetContacts.length} Emergency Contacts`}
                   </span>
-                  <span className="text-[10px] text-[#dfe2f1]/50 truncate max-w-[200px]">
-                    Fatima (Wife), Dr. Tariq, Bilal
+                  <span className="text-[10px] text-[#dfe2f1]/50 truncate max-w-[220px]">
+                    {targetContacts.map((c) => `${c.name} (${c.relation})`).join(', ') || 'No contacts configured'}
                   </span>
                 </div>
               </div>
-              <span className="px-2 py-0.5 rounded bg-[#262a35] text-[10px] font-mono-num">
-                {isDispatched ? 'DELIVERED' : 'READY'}
+              <span className="px-2 py-0.5 rounded bg-[#262a35] text-[10px] font-mono-num shrink-0">
+                {isDispatched ? 'DELIVERED' : `T-${timeLeft}s`}
               </span>
             </div>
 

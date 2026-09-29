@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { UserRoleMode, RescueSystemConfig } from '../types';
+import { UserRoleMode, RescueSystemConfig, EmergencyContact } from '../types';
 import { soundEffects } from '../utils/audio';
 
 interface MonitorViewProps {
   userRole: UserRoleMode;
   rescueConfig: RescueSystemConfig;
+  contacts?: EmergencyContact[];
   onOpenRescueConfigModal: () => void;
+  onOpenContactsTab?: () => void;
+  onAddContact?: () => void;
   onToggleUserRole: (role: UserRoleMode) => void;
   onTriggerEmergency: () => void;
   onOpenWitnessModal: () => void;
@@ -14,7 +17,10 @@ interface MonitorViewProps {
 export const MonitorView: React.FC<MonitorViewProps> = ({
   userRole,
   rescueConfig,
+  contacts = [],
   onOpenRescueConfigModal,
+  onOpenContactsTab,
+  onAddContact,
   onToggleUserRole,
   onTriggerEmergency,
   onOpenWitnessModal,
@@ -144,6 +150,65 @@ export const MonitorView: React.FC<MonitorViewProps> = ({
           <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">
             tune
           </span>
+        </div>
+      </div>
+
+      {/* Emergency Contacts Lifeline Quick-Bar */}
+      <div className="bg-[#1c1f2a] border border-[#262a35] hover:border-[#4edea3]/50 transition-all rounded-2xl p-2.5 flex items-center justify-between shadow-md">
+        <div
+          onClick={() => {
+            soundEffects.playHapticClick();
+            if (onOpenContactsTab) onOpenContactsTab();
+          }}
+          className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1 group"
+        >
+          <div className="w-8 h-8 rounded-xl bg-[#4edea3]/20 text-[#4edea3] flex items-center justify-center font-bold text-xs shrink-0 border border-[#4edea3]/40">
+            <span className="material-symbols-outlined text-[18px]">contact_phone</span>
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-bold text-white group-hover:text-[#4edea3] transition-colors">
+                Emergency Lifelines
+              </span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#4edea3]/20 text-[#4edea3] font-bold font-mono-num">
+                {contacts.filter((c) => c.enabledAlert !== false).length} Armed 🟢
+              </span>
+            </div>
+            <span className="text-[10px] text-[#dfe2f1]/60 block truncate">
+              {contacts.length > 0
+                ? contacts.map((c) => c.name).slice(0, 3).join(', ') + (contacts.length > 3 ? ` +${contacts.length - 3}` : '')
+                : 'No contacts configured • Tap to add parents & kin'}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0 pl-2">
+          {onAddContact && (
+            <button
+              type="button"
+              onClick={() => {
+                soundEffects.playHapticClick();
+                onAddContact();
+              }}
+              className="px-2.5 py-1 rounded-lg bg-[#262a35] hover:bg-[#313540] text-white text-[11px] font-semibold flex items-center gap-1 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[14px] text-[#ff334b]">person_add</span>
+              <span>Add</span>
+            </button>
+          )}
+          {onOpenContactsTab && (
+            <button
+              type="button"
+              onClick={() => {
+                soundEffects.playHapticClick();
+                onOpenContactsTab();
+              }}
+              className="p-1 rounded-lg text-[#00f1fd] hover:bg-[#262a35] transition-colors"
+              title="Manage Contacts"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+            </button>
+          )}
         </div>
       </div>
 

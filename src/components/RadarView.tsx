@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Responder, EmergencyService } from '../types';
+import { Responder, EmergencyService, EmergencyContact } from '../types';
 import { EMERGENCY_SERVICES } from '../data/emergencyServices';
 import { soundEffects } from '../utils/audio';
 
 interface RadarViewProps {
+  contacts?: EmergencyContact[];
   onOpenCall: (responder: Responder) => void;
   onOpenRoute: (responder: Responder) => void;
   onOpenServiceCall?: (service: EmergencyService) => void;
@@ -11,6 +12,7 @@ interface RadarViewProps {
 }
 
 export const RadarView: React.FC<RadarViewProps> = ({
+  contacts,
   onOpenCall,
   onOpenRoute,
   onOpenServiceCall,
@@ -168,7 +170,9 @@ export const RadarView: React.FC<RadarViewProps> = ({
         <div className="mt-3 pt-3 border-t border-[#313540] flex flex-wrap gap-2 text-[11px] font-semibold">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#171b26] border border-[#4edea3]/40 text-[#4edea3]">
             <span className="material-symbols-outlined text-[14px]">check_circle</span>
-            <span>SMS Sent to Emergency Contacts 🟢</span>
+            <span>
+              SMS Sent to Emergency Contacts ({contacts ? contacts.filter(c => c.enabledAlert !== false).length : 3}) 🟢
+            </span>
           </div>
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#171b26] border border-[#00f1fd]/40 text-[#00f1fd]">
             <span className="material-symbols-outlined text-[14px]">verified</span>

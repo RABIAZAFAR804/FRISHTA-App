@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { TabType, UserRoleMode, Responder, EmergencyService, RescueSystemConfig } from './types';
+import { TabType, UserRoleMode, Responder, EmergencyService, RescueSystemConfig, EmergencyContact } from './types';
 import { DEFAULT_RESCUE_CONFIG } from './data/emergencyServices';
+import { loadEmergencyContacts, saveEmergencyContacts } from './data/initialContacts';
 import { soundEffects } from './utils/audio';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
@@ -9,6 +10,10 @@ import { EmergencyView } from './components/EmergencyView';
 import { RadarView } from './components/RadarView';
 import { ServicesHubView } from './components/ServicesHubView';
 import { MedicalCardView } from './components/MedicalCardView';
+import { EmergencyContactsView } from './components/EmergencyContactsView';
+import { ContactFormModal } from './components/ContactFormModal';
+import { ContactPermissionModal } from './components/ContactPermissionModal';
+import { PhoneContactsPickerModal } from './components/PhoneContactsPickerModal';
 import { CallModal, RouteModal, WitnessModal } from './components/Modals';
 import { RescueSystemManagerModal } from './components/RescueSystemManagerModal';
 
@@ -30,6 +35,14 @@ export default function App() {
   // Victim's Configured Rescue System (#1 1122 Locked, Secondary Replaceable, Nearest Hospital)
   const [rescueConfig, setRescueConfig] = useState<RescueSystemConfig>(DEFAULT_RESCUE_CONFIG);
   const [isRescueConfigModalOpen, setIsRescueConfigModalOpen] = useState(false);
+
+  // Emergency Contacts state with local storage persistence
+  const [contacts, setContacts] = useState<EmergencyContact[]>(loadEmergencyContacts);
+  const [isContactFormModalOpen, setIsContactFormModalOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
+  const [isPhonePickerOpen, setIsPhonePickerOpen] = useState(false);
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
+  const [prefillContactData, setPrefillContactData] = useState<{ name: string; phone: string; relation: string } | null>(null);
 
   // Modals state
   const [activeCallTarget, setActiveCallTarget] = useState<CallOrRouteTarget | null>(null);
@@ -68,7 +81,8 @@ export default function App() {
   const handleDispatchConfirmed = () => {
     setIsEmergencyActive(true);
     setActiveTab('radar');
-    showToast(`🚑 1122 + ${rescueConfig.secondarySystem.name} Dispatched to ${rescueConfig.targetHospital.name}!`);
+    const alertCount = contacts.filter((c) => c.enabledAlert !== false).length;
+    showToast(`🚑 1122 Dispatched & SMS GPS sent to ${alertCount} Emergency Contacts!`);
   };
 
   const handleWitnessSubmit = (details: { casualties: string; severity: string; notes: string }) => {
@@ -82,6 +96,139 @@ export default function App() {
     setIsEmergencyActive(true);
     setActiveTab('radar');
     showToast(`📡 Simultaneous CAD Broadcast: Rescue 1122 (All HQs), ${rescueConfig.secondarySystem.name} & ${rescueConfig.targetHospital.name}!`);
+  };
+
+  // Contacts handlers
+  const handleSaveContact = (savedContact: EmergencyContact) => {
+    setContacts((prev) => {
+      const existsIndex = prev.findIndex((c) => c.id === savedContact.id);
+      let updated: EmergencyContact[];
+      if (existsIndex >= 0) {
+        updated = [...prev];
+        updated[existsIndex] = savedContact;
+      } else {
+        if (savedContact.isPrimary) {
+          prev = prev.map((c) => ({ ...c, isPrimary: false }));
+        }
+        updated = [savedContact, ...prev];
+      }
+
+      if (savedContact.isPrimary) {
+        updated = updated.map((c) =>
+          c.id === savedContact.id ? { ...c, isPrimary: true } : { ...c, isPrimary: false }
+        );
+      }
+
+      saveEmergencyContacts(updated);
+      return updated;
+    });
+
+    setIsContactFormModalOpen(false);
+    setEditingContact(null);
+    setPrefillContactData(null);
+    showToast(`✓ Emergency Lifeline Saved: ${savedContact.name} (${savedContact.relation})`);
+  };
+
+  const handleDeleteContact = (contactId: string) => {
+    setContacts((prev) => {
+      const updated = prev.filter((c) => c.id !== contactId);
+      saveEmergencyContacts(updated);
+      return updated;
+    });
+  };
+
+  const handleToggleContactAlert = (contactId: string) => {
+    setContacts((prev) => {
+      const updated = prev.map((c) => {
+        if (c.id === contactId) {
+          const nextState = c.enabledAlert === false;
+          showToast(nextState ? `✓ Crash GPS Alert ENABLED for ${c.name}` : `Crash Alert MUTED for ${c.name}`);
+          return { ...c, enabledAlert: nextState };
+        }
+        return c;
+      });
+      saveEmergencyContacts(updated);
+      return updated;
+    });
+  };
+
+  const handleOpenAddContactModal = () => {
+    setEditingContact(null);
+    setPrefillContactData(null);
+    setIsContactFormModalOpen(true);
+  };
+
+  const handleOpenEditContactModal = (contact: EmergencyContact) => {
+    setEditingContact(contact);
+    setPrefillContactData(null);
+    setIsContactFormModalOpen(true);
+  };
+
+  const handleClearAllContacts = () => {
+    setContacts([]);
+    saveEmergencyContacts([]);
+    showToast('✓ All temporary emergency contacts cleared');
+  };
+
+  // Check if browser native Contact Picker API is available
+  const isNativePickerSupported =
+    typeof navigator !== 'undefined' &&
+    'contacts' in navigator &&
+    'ContactsManager' in window &&
+    'select' in (navigator as any).contacts;
+
+  const triggerContactSelection = async () => {
+    if (isNativePickerSupported) {
+      try {
+        const props = ['name', 'tel'];
+        const selected = await (navigator as any).contacts.select(props, { multiple: false });
+        if (selected && selected.length > 0 && selected[0]) {
+          const picked = selected[0];
+          const rawName = picked.name?.[0] || 'Phone Contact';
+          const rawTel = picked.tel?.[0] || '';
+          setPrefillContactData({
+            name: rawName,
+            phone: rawTel,
+            relation: 'Family',
+          });
+          setEditingContact(null);
+          setIsContactFormModalOpen(true);
+          showToast(`✓ Selected ${rawName} directly from device contacts`);
+          return;
+        }
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+        console.warn('Native picker error:', err);
+      }
+    }
+    setIsPhonePickerOpen(true);
+  };
+
+  const handleChooseFromPhone = async () => {
+    // Directly launch phone contact picker if supported by mobile browser
+    if (isNativePickerSupported) {
+      await triggerContactSelection();
+    } else {
+      setIsPhonePickerOpen(true);
+    }
+  };
+
+  const handleGrantPermission = () => {
+    setIsPermissionModalOpen(false);
+    triggerContactSelection();
+  };
+
+  const handleDenyPermission = () => {
+    setIsPermissionModalOpen(false);
+    handleOpenAddContactModal();
+  };
+
+  const handleSelectFromPhoneBook = (data: { name: string; phone: string; relation: string }) => {
+    setPrefillContactData(data);
+    setEditingContact(null);
+    setIsPhonePickerOpen(false);
+    setIsContactFormModalOpen(true);
+    showToast(`✓ Selected ${data.name}. Review details and save.`);
   };
 
   return (
@@ -101,16 +248,33 @@ export default function App() {
           <MonitorView
             userRole={userRole}
             rescueConfig={rescueConfig}
+            contacts={contacts}
             onOpenRescueConfigModal={() => setIsRescueConfigModalOpen(true)}
+            onOpenContactsTab={() => setActiveTab('contacts')}
+            onAddContact={handleOpenAddContactModal}
             onToggleUserRole={setUserRole}
             onTriggerEmergency={handleTriggerSOS}
             onOpenWitnessModal={() => setIsWitnessModalOpen(true)}
           />
         )}
 
+        {activeTab === 'contacts' && (
+          <EmergencyContactsView
+            contacts={contacts}
+            onAddContact={handleOpenAddContactModal}
+            onEditContact={handleOpenEditContactModal}
+            onDeleteContact={handleDeleteContact}
+            onClearAllContacts={handleClearAllContacts}
+            onToggleAlert={handleToggleContactAlert}
+            onChooseFromPhone={handleChooseFromPhone}
+            onShowToast={showToast}
+          />
+        )}
+
         {activeTab === 'emergency' && (
           <EmergencyView
             rescueConfig={rescueConfig}
+            contacts={contacts}
             onCancelEmergency={handleCancelEmergency}
             onDispatchConfirmed={handleDispatchConfirmed}
             isAudioMuted={isAudioMuted}
@@ -119,6 +283,7 @@ export default function App() {
 
         {activeTab === 'radar' && (
           <RadarView
+            contacts={contacts}
             onOpenCall={(responder) => setActiveCallTarget(responder)}
             onOpenRoute={(responder) => setActiveRouteTarget(responder)}
             onOpenServiceCall={(service) => setActiveCallTarget(service)}
@@ -136,7 +301,16 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'medical' && <MedicalCardView />}
+        {activeTab === 'medical' && (
+          <MedicalCardView
+            contacts={contacts}
+            onAddContact={handleOpenAddContactModal}
+            onEditContact={handleOpenEditContactModal}
+            onDeleteContact={handleDeleteContact}
+            onChooseFromPhone={handleChooseFromPhone}
+            onShowToast={showToast}
+          />
+        )}
       </main>
 
       {/* Floating System Micro-Toast */}
@@ -175,11 +349,42 @@ export default function App() {
         }}
       />
 
+      {/* Contact Form Modal (Add / Edit) */}
+      <ContactFormModal
+        isOpen={isContactFormModalOpen}
+        onClose={() => {
+          setIsContactFormModalOpen(false);
+          setEditingContact(null);
+          setPrefillContactData(null);
+        }}
+        onSave={handleSaveContact}
+        editingContact={editingContact}
+        onOpenPhonePicker={handleChooseFromPhone}
+        prefillData={prefillContactData}
+      />
+
+      {/* Contact Permission Modal */}
+      <ContactPermissionModal
+        isOpen={isPermissionModalOpen}
+        onGrantPermission={handleGrantPermission}
+        onDenyPermission={handleDenyPermission}
+      />
+
+      {/* Phone Contacts Picker Modal */}
+      <PhoneContactsPickerModal
+        isOpen={isPhonePickerOpen}
+        onClose={() => setIsPhonePickerOpen(false)}
+        onSelectContact={handleSelectFromPhoneBook}
+        onTriggerNativePicker={triggerContactSelection}
+        isNativePickerSupported={Boolean(isNativePickerSupported)}
+      />
+
       {/* Bottom Sticky Tab Navigation */}
       <BottomNav
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         isEmergencyActive={isEmergencyActive}
+        contactsCount={contacts.filter((c) => c.enabledAlert !== false).length}
       />
     </div>
   );

@@ -21,6 +21,8 @@ export const Header: React.FC<HeaderProps> = ({
     switch (activeTab) {
       case 'monitor':
         return 'Monitor';
+      case 'contacts':
+        return 'Lifelines & Contacts';
       case 'emergency':
         return 'Emergency';
       case 'radar':

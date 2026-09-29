@@ -1,4 +1,4 @@
-export type TabType = 'monitor' | 'emergency' | 'radar' | 'services' | 'medical';
+export type TabType = 'monitor' | 'contacts' | 'emergency' | 'radar' | 'services' | 'medical';
 
 export type UserRoleMode = 'victim' | 'witness';
 
@@ -68,7 +68,8 @@ export interface EmergencyContact {
   relation: string;
   phone: string;
   isPrimary?: boolean;
-  avatarUrl: string;
+  enabledAlert?: boolean; // Controls whether this contact receives the automatic accident SMS alert
+  avatarUrl?: string;
   notes?: string;
   proximity?: string;
 }
