@@ -8,6 +8,7 @@ interface MonitorViewProps {
   contacts?: EmergencyContact[];
   onOpenRescueConfigModal: () => void;
   onOpenContactsTab?: () => void;
+  onOpenSafetyHub?: () => void;
   onAddContact?: () => void;
   onToggleUserRole: (role: UserRoleMode) => void;
   onTriggerEmergency: () => void;
@@ -20,6 +21,7 @@ export const MonitorView: React.FC<MonitorViewProps> = ({
   contacts = [],
   onOpenRescueConfigModal,
   onOpenContactsTab,
+  onOpenSafetyHub,
   onAddContact,
   onToggleUserRole,
   onTriggerEmergency,
@@ -211,6 +213,43 @@ export const MonitorView: React.FC<MonitorViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* Safety Hub & Roadside First-Aid Quick Banner */}
+      {onOpenSafetyHub && (
+        <div
+          onClick={() => {
+            soundEffects.playHapticClick();
+            onOpenSafetyHub();
+          }}
+          className="group bg-gradient-to-r from-[#17202c] via-[#131b26] to-[#121622] border border-[#273447] hover:border-[#00f1fd]/50 transition-all rounded-2xl p-2.5 flex items-center justify-between shadow-md cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-xl bg-[#00f1fd]/20 text-[#00f1fd] flex items-center justify-center font-bold text-xs shrink-0 border border-[#00f1fd]/40 group-hover:scale-105 transition-transform">
+              <span className="material-symbols-outlined text-[18px]">menu_book</span>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-white group-hover:text-[#00f1fd] transition-colors">
+                  Safety Hub &amp; First-Aid Blog
+                </span>
+                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#00f1fd]/20 text-[#00f1fd] font-bold">
+                  NEW GUIDES
+                </span>
+              </div>
+              <span className="text-[10px] text-[#dfe2f1]/60 block truncate">
+                50Hz CAD tech • First 5 Mins First-Aid • 5 Biker Tips
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0 pl-2 text-[#00f1fd]">
+            <span className="text-[11px] font-bold hidden sm:inline">Explore</span>
+            <span className="material-symbols-outlined text-[18px] group-hover:translate-x-0.5 transition-transform">
+              arrow_forward
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Role Selection Check-Toggles: "I am a victim" vs "I am a witness" */}
       <div className="bg-[#171b26] border border-[#313540] rounded-2xl p-1.5 flex items-center gap-1.5 shadow-md">

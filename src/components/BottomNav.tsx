@@ -35,6 +35,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       badge: isEmergencyActive ? 'ACTIVE' : undefined,
     },
     {
+      id: 'safety-hub' as TabType,
+      label: 'Safety',
+      icon: 'menu_book',
+    },
+    {
       id: 'radar' as TabType,
       label: 'Radar',
       icon: 'radar',

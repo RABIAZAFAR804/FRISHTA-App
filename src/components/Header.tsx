@@ -31,6 +31,8 @@ export const Header: React.FC<HeaderProps> = ({
         return 'Emergency Hub';
       case 'medical':
         return 'Medical Card';
+      case 'safety-hub':
+        return 'Safety Hub';
     }
   };
 
@@ -81,8 +83,27 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Sound Toggle + Header SOS + Profile Avatar */}
+        {/* Right: Safety Hub + Sound Toggle + Header SOS + Profile Avatar */}
         <div className="flex items-center gap-2">
+          {/* Safety Hub & Blog Quick Button */}
+          <button
+            type="button"
+            onClick={() => {
+              soundEffects.playHapticClick();
+              onSelectTab('safety-hub');
+            }}
+            aria-label="Safety Hub and First-Aid Guides"
+            className={`px-2.5 py-1.5 rounded-full border text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 ${
+              activeTab === 'safety-hub'
+                ? 'bg-[#00f1fd]/20 border-[#00f1fd] text-[#00f1fd] shadow-[0_0_12px_rgba(0,241,253,0.3)]'
+                : 'bg-[#1c1f2a] border-[#313540] text-[#dfe2f1]/80 hover:text-white hover:bg-[#252a38]'
+            }`}
+            title="Safety Hub & First-Aid Guides"
+          >
+            <span className="material-symbols-outlined text-[17px]">menu_book</span>
+            <span className="hidden sm:inline">Guides</span>
+          </button>
+
           {/* Sound Mute/Unmute */}
           <button
             type="button"

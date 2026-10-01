@@ -1,4 +1,6 @@
-export type TabType = 'monitor' | 'contacts' | 'emergency' | 'radar' | 'services' | 'medical';
+export type TabType = 'monitor' | 'contacts' | 'emergency' | 'radar' | 'services' | 'medical' | 'safety-hub';
+
+export * from './types/blog';
 
 export type UserRoleMode = 'victim' | 'witness';
 

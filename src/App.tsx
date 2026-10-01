@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TabType, UserRoleMode, Responder, EmergencyService, RescueSystemConfig, EmergencyContact } from './types';
 import { DEFAULT_RESCUE_CONFIG } from './data/emergencyServices';
 import { loadEmergencyContacts, saveEmergencyContacts } from './data/initialContacts';
@@ -11,6 +11,8 @@ import { RadarView } from './components/RadarView';
 import { ServicesHubView } from './components/ServicesHubView';
 import { MedicalCardView } from './components/MedicalCardView';
 import { EmergencyContactsView } from './components/EmergencyContactsView';
+import { SafetyHubView } from './components/safety-hub/SafetyHubView';
+import { ArticleDetailView } from './components/safety-hub/ArticleDetailView';
 import { ContactFormModal } from './components/ContactFormModal';
 import { ContactPermissionModal } from './components/ContactPermissionModal';
 import { PhoneContactsPickerModal } from './components/PhoneContactsPickerModal';
@@ -28,9 +30,54 @@ type CallOrRouteTarget = (Responder | EmergencyService) & {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('monitor');
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<UserRoleMode>('victim');
   const [isEmergencyActive, setIsEmergencyActive] = useState(false);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
+
+  // Sync tab and article details with URL path and hash
+  useEffect(() => {
+    const handleUrlRoute = () => {
+      const hash = window.location.hash || '';
+      const path = window.location.pathname || '';
+      const combined = (hash + ' ' + path).toLowerCase();
+
+      if (combined.includes('safety-hub') || combined.includes('blog') || combined.includes('article-details')) {
+        setActiveTab('safety-hub');
+        // Extract possible article ID
+        const raw = hash.replace(/^#\/?/, '').replace(/^blog\/?/, '').replace(/^safety-hub\/?/, '');
+        if (raw && !raw.includes('/')) {
+          setSelectedArticleId(raw);
+        } else if (raw.includes('/')) {
+          const segments = raw.split('/').filter(Boolean);
+          if (segments.length > 0) {
+            setSelectedArticleId(segments[segments.length - 1]);
+          }
+        }
+      }
+    };
+
+    handleUrlRoute();
+    window.addEventListener('hashchange', handleUrlRoute);
+    window.addEventListener('popstate', handleUrlRoute);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlRoute);
+      window.removeEventListener('popstate', handleUrlRoute);
+    };
+  }, []);
+
+  const handleSelectTab = (tab: TabType) => {
+    setActiveTab(tab);
+    if (tab === 'safety-hub') {
+      window.history.pushState(
+        null,
+        '',
+        selectedArticleId ? `#/safety-hub/${selectedArticleId}` : '#/safety-hub'
+      );
+    } else {
+      window.history.pushState(null, '', `/#/${tab}`);
+    }
+  };
 
   // Victim's Configured Rescue System (#1 1122 Locked, Secondary Replaceable, Nearest Hospital)
   const [rescueConfig, setRescueConfig] = useState<RescueSystemConfig>(DEFAULT_RESCUE_CONFIG);
@@ -236,7 +283,7 @@ export default function App() {
       {/* Tactical Top Bar */}
       <Header
         activeTab={activeTab}
-        onSelectTab={setActiveTab}
+        onSelectTab={handleSelectTab}
         onTriggerSOS={handleTriggerSOS}
         isAudioMuted={isAudioMuted}
         onToggleMute={handleToggleMute}
@@ -250,13 +297,43 @@ export default function App() {
             rescueConfig={rescueConfig}
             contacts={contacts}
             onOpenRescueConfigModal={() => setIsRescueConfigModalOpen(true)}
-            onOpenContactsTab={() => setActiveTab('contacts')}
+            onOpenContactsTab={() => handleSelectTab('contacts')}
+            onOpenSafetyHub={() => {
+              setSelectedArticleId(null);
+              handleSelectTab('safety-hub');
+            }}
             onAddContact={handleOpenAddContactModal}
             onToggleUserRole={setUserRole}
             onTriggerEmergency={handleTriggerSOS}
             onOpenWitnessModal={() => setIsWitnessModalOpen(true)}
           />
         )}
+
+        {activeTab === 'safety-hub' &&
+          (selectedArticleId ? (
+            <ArticleDetailView
+              articleId={selectedArticleId}
+              onBack={() => {
+                setSelectedArticleId(null);
+                window.history.pushState(null, '', '#/safety-hub');
+              }}
+              onSelectRelatedArticle={(id) => {
+                setSelectedArticleId(id);
+                window.history.pushState(null, '', `#/safety-hub/${id}`);
+              }}
+              onTriggerSOS={handleTriggerSOS}
+            />
+          ) : (
+            <SafetyHubView
+              onSelectArticle={(id) => {
+                setSelectedArticleId(id);
+                window.history.pushState(null, '', `#/safety-hub/${id}`);
+              }}
+              onOpen1122Call={() => {
+                showToast('📞 Connecting to Rescue 1122 Emergency Dispatch...');
+              }}
+            />
+          ))}
 
         {activeTab === 'contacts' && (
           <EmergencyContactsView
@@ -382,7 +459,7 @@ export default function App() {
       {/* Bottom Sticky Tab Navigation */}
       <BottomNav
         activeTab={activeTab}
-        onSelectTab={setActiveTab}
+        onSelectTab={handleSelectTab}
         isEmergencyActive={isEmergencyActive}
         contactsCount={contacts.filter((c) => c.enabledAlert !== false).length}
       />
